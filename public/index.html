@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mindshop · Sphere Grid</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --history:      #3b82f6;
+      --history-dim:  #1d4ed8;
+      --ethics:       #ef4444;
+      --ethics-dim:   #991b1b;
+      --aesthetics:   #22c55e;
+      --aesthetics-dim: #15803d;
+      --epistemology: #f59e0b;
+      --epistemology-dim: #92400e;
+      --metaphysics:  #a78bfa;
+      --metaphysics-dim: #5b21b6;
+      --locked:       #374151;
+      --locked-dim:   #1f2937;
+      --bg:           #070b0f;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body.dragging { cursor: grabbing; }
+
+    /* Subtle noise grain */
+    body::after {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+    }
+
+    #viewport {
+      position: fixed; inset: 0; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    #canvas {
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    #sphere-grid {
+      width: 820px; height: 820px;
+      overflow: visible;
+    }
+
+    /* UI overlays */
+    #legend {
+      position: fixed;
+      top: 22px; left: 22px; z-index: 20;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .legend-item {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 10.5px; letter-spacing: 0.12em;
+      text-transform: uppercase; font-weight: 400;
+      color: rgba(255,255,255,0.65);
+      cursor: default;
+    }
+    .legend-item.locked { color: rgba(255,255,255,0.25); }
+
+    .legend-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    #zoom-controls {
+      position: fixed;
+      bottom: 22px; right: 22px; z-index: 20;
+      display: flex; gap: 6px;
+    }
+
+    .zoom-btn {
+      width: 34px; height: 34px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 17px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s, color 0.15s;
+    }
+    .zoom-btn:hover {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.8);
+    }
+
+    #branding {
+      position: fixed;
+      bottom: 22px; left: 22px; z-index: 20;
+      font-size: 9.5px; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.15);
+    }
+
+    .sg-tooltip {
+      position: fixed;
+      background: rgba(8,11,15,0.92);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 5px 10px;
+      font-size: 10.5px; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.85);
+      pointer-events: none; z-index: 30;
+      opacity: 0; transition: opacity 0.12s;
+      white-space: nowrap;
+    }
+    .sg-tooltip.visible { opacity: 1; }
+
+    /* Pulse animation for available nodes */
+    @keyframes pulse-ring {
+      0%   { r: 11.81; opacity: 0.6; }
+      70%  { r: 17;    opacity: 0; }
+      100% { r: 17;    opacity: 0; }
+    }
+    .node-available .pulse-ring {
+      animation: pulse-ring 2.2s ease-out infinite;
+    }
+  </style>
+</head>
+<body>
+
+<div id="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--history)"></div>History</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--ethics)"></div>Ethics</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--aesthetics)"></div>Aesthetics</div>
+  <div class="legend-item locked"><div class="legend-dot" style="background:var(--locked)"></div>Epistemology</div>
+  <div class="legend-item locked"><div class="legend-dot" style="background:var(--locked)"></div>Metaphysics</div>
+</div>
+
+<div id="zoom-controls">
+  <button class="zoom-btn" id="zoomIn">+</button>
+  <button class="zoom-btn" id="zoomOut">−</button>
+  <button class="zoom-btn" id="zoomReset">⊙</button>
+</div>
+
+<div id="branding">mindshop.cafe</div>
+<div class="sg-tooltip" id="tooltip"></div>
+
+<div id="viewport">
+  <div id="canvas"></div>
+</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+
+const CYCLES = [
+  {
+    key: 'history', label: 'History',
+    hubCx: 540, hubCy: 256.6,
+    color: '#3b82f6', colorDim: '#1d4ed8', colorGlow: '#60a5fa',
+    available: true,
+    progress: { completed: [0,1,2,3,4,5], available: [6,7,8], locked: [9,10,11] },
+    labelX: 540, labelY: 72,
+    lessons: [
+      'Bienvenido a Mindshop', 'Miedo a lo Desconocido', 'El Primer Filósofo',
+      'Cambio Inmutable', 'Sócrates, El Vagabundo', 'Sócrates, El Tábano',
+      'Platón, El Aristócrata', 'Platón, El Escolar', 'Aristóteles, Un Hombre',
+      'Aristóteles, El Filósofo', 'El Filósofo-Rey', 'Repaso Final'
+    ]
+  },
+  {
+    key: 'metaphysics', label: 'Metaphysics',
+    hubCx: 270.03, hubCy: 452.75,
+    color: '#a78bfa', colorDim: '#5b21b6', colorGlow: '#c4b5fd',
+    available: false,
+    labelX: 68, labelY: 453,
+    lessons: []
+  },
+  {
+    key: 'epistemology', label: 'Epistemology',
+    hubCx: 373.15, hubCy: 770.12,
+    color: '#f59e0b', colorDim: '#92400e', colorGlow: '#fcd34d',
+    available: false,
+    labelX: 295, labelY: 1018,
+    lessons: []
+  },
+  {
+    key: 'aesthetics', label: 'Aesthetics',
+    hubCx: 706.85, hubCy: 770.12,
+    color: '#22c55e', colorDim: '#15803d', colorGlow: '#4ade80',
+    available: true,
+    progress: { completed: [], available: [0,1], locked: [2,3,4,5,6,7,8,9,10,11] },
+    labelX: 785, labelY: 1018,
+    lessons: [
+      'Introducción a la Estética', 'Platón y la Belleza', 'Aristóteles y el Arte',
+      'Hume y el Gusto', 'Kant y lo Sublime', 'Schopenhauer',
+      'Tolstoi', 'Nietzsche', 'Yuriko Saito', 'Repaso Final', 'Extra', 'Extra 2'
+    ]
+  },
+  {
+    key: 'ethics', label: 'Ethics',
+    hubCx: 809.97, hubCy: 452.75,
+    color: '#ef4444', colorDim: '#991b1b', colorGlow: '#f87171',
+    available: true,
+    progress: { completed: [], available: [0,1,2], locked: [3,4,5,6,7,8,9,10,11] },
+    labelX: 1012, labelY: 453,
+    lessons: [
+      'Epicuro', 'Tomás de Aquino', 'David Hume', 'Immanuel Kant',
+      'Karl Marx', 'Friedrich Nietzsche', 'Ayn Rand', 'Simone de Beauvoir',
+      'Derek Parfit', 'Peter Singer', 'Repaso Final', 'Extra'
+    ]
+  },
+];
+
+// ── SVG INIT ─────────────────────────────────────────────────────────────
+
+const NS = 'http://www.w3.org/2000/svg';
+
+async function init() {
+  const res = await fetch('./sphere-grid.svg');
+  const text = await res.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(text, 'image/svg+xml');
+  const svgEl = doc.querySelector('svg');
+
+  svgEl.id = 'sphere-grid';
+  svgEl.removeAttribute('width');
+  svgEl.removeAttribute('height');
+
+  // Add filters to defs
+  let defs = svgEl.querySelector('defs');
+  if (!defs) { defs = document.createElementNS(NS, 'defs'); svgEl.prepend(defs); }
+
+  defs.innerHTML += `
+    <filter id="glow-node" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-hub" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-center" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  `;
+
+  const rootG = svgEl.querySelector(':scope > g');
+
+  // Style center hub
+  const centerHub = [...svgEl.querySelectorAll('circle')]
+    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 50) < 1);
+  if (centerHub) {
+    centerHub.style.fill = '#0f1923';
+    centerHub.style.stroke = 'rgba(255,255,255,0.35)';
+    centerHub.style.strokeWidth = '2';
+    centerHub.setAttribute('filter', 'url(#glow-center)');
+
+    // "M" letter in center
+    const label = document.createElementNS(NS, 'text');
+    label.setAttribute('x', '540');
+    label.setAttribute('y', '548');
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('fill', 'rgba(255,255,255,0.5)');
+    label.setAttribute('font-size', '28');
+    label.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, sans-serif');
+    label.setAttribute('font-weight', '200');
+    label.setAttribute('letter-spacing', '2');
+    label.textContent = 'M';
+    rootG.appendChild(label);
+  }
+
+  // Get the 5 top-level cluster groups
+  const clusterGroups = [...rootG.children].filter(el => el.tagName === 'g');
+
+  // Match each cluster group to its cycle by finding the hub circle inside
+  CYCLES.forEach(cycle => {
+    const group = clusterGroups.find(g => {
+      return [...g.querySelectorAll('circle')].some(c => {
+        return Math.abs(parseFloat(c.getAttribute('cx')) - cycle.hubCx) < 2 &&
+               Math.abs(parseFloat(c.getAttribute('cy')) - cycle.hubCy) < 2 &&
+               Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1;
+      });
+    });
+    if (!group) return;
+
+    group.setAttribute('data-cycle', cycle.key);
+    group.setAttribute('data-label', cycle.label);
+    group.setAttribute('data-available', cycle.available);
+
+    styleCluster(group, cycle);
+    injectCycleLabel(rootG, cycle);
+  });
+
+  document.getElementById('canvas').appendChild(svgEl);
+  setupTooltips(svgEl);
+}
+
+function styleCluster(group, cycle) {
+  if (!cycle.available) {
+    // Locked: gray everything
+    group.querySelectorAll('.cls-13').forEach(el => {
+      el.style.setProperty('fill', '#1a2230', 'important');
+    });
+    group.querySelectorAll('.cls-6, .cls-7').forEach(el => {
+      el.style.setProperty('stroke', '#2d3748', 'important');
+      el.style.setProperty('stroke-opacity', '0.5', 'important');
+    });
+    group.querySelectorAll('.cls-12, .cls-5, .cls-8').forEach(el => {
+      el.style.setProperty('fill', '#374151', 'important');
+      el.style.setProperty('opacity', '0.4', 'important');
+    });
+    return;
+  }
+
+  // Color lines/arcs
+  group.querySelectorAll('.cls-6, .cls-7').forEach(el => {
+    el.style.setProperty('stroke', cycle.colorGlow, 'important');
+    el.style.setProperty('stroke-opacity', '0.7', 'important');
+  });
+
+  // Style hub circle (big one)
+  const hubCircle = [...group.querySelectorAll('circle')]
+    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
+  if (hubCircle) {
+    hubCircle.style.setProperty('fill', cycle.color, 'important');
+    hubCircle.style.setProperty('stroke', cycle.colorGlow, 'important');
+    hubCircle.style.setProperty('stroke-width', '2', 'important');
+    hubCircle.setAttribute('filter', 'url(#glow-hub)');
+  }
+
+  // Style satellite nodes (r=11.81) with progress states
+  const satelliteGroups = [...group.querySelectorAll('g')].filter(g => {
+    const c = g.querySelector('circle');
+    return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5;
+  });
+
+  const progress = cycle.progress || { completed: [], available: [], locked: [] };
+
+  satelliteGroups.forEach((nodeGroup, idx) => {
+    const circle = nodeGroup.querySelector('.cls-13');
+    if (!circle) return;
+
+    // Add pulse ring for available nodes
+    if (progress.available.includes(idx)) {
+      const cx = circle.getAttribute('cx');
+      const cy = circle.getAttribute('cy');
+      const ring = document.createElementNS(NS, 'circle');
+      ring.setAttribute('cx', cx);
+      ring.setAttribute('cy', cy);
+      ring.setAttribute('r', '11.81');
+      ring.setAttribute('fill', 'none');
+      ring.setAttribute('stroke', cycle.colorGlow);
+      ring.setAttribute('stroke-width', '1.5');
+      ring.setAttribute('class', 'pulse-ring');
+      nodeGroup.classList.add('node-available');
+      nodeGroup.insertBefore(ring, nodeGroup.firstChild);
+    }
+
+    if (progress.completed.includes(idx)) {
+      circle.style.setProperty('fill', cycle.color, 'important');
+      circle.style.setProperty('stroke', cycle.colorGlow, 'important');
+      circle.setAttribute('filter', 'url(#glow-node)');
+      nodeGroup.querySelectorAll('.cls-12, .cls-5, .cls-8').forEach(el => {
+        el.style.setProperty('fill', '#fff', 'important');
+        el.style.setProperty('opacity', '1', 'important');
+      });
+    } else if (progress.available.includes(idx)) {
+      circle.style.setProperty('fill', cycle.colorDim, 'important');
+      circle.style.setProperty('stroke', cycle.colorGlow, 'important');
+      circle.style.setProperty('stroke-width', '2', 'important');
+      nodeGroup.querySelectorAll('.cls-12, .cls-5, .cls-8').forEach(el => {
+        el.style.setProperty('fill', 'rgba(255,255,255,0.7)', 'important');
+      });
+    } else {
+      // locked node
+      circle.style.setProperty('fill', '#111827', 'important');
+      circle.style.setProperty('stroke', '#374151', 'important');
+      nodeGroup.querySelectorAll('.cls-12, .cls-5, .cls-8').forEach(el => {
+        el.style.setProperty('fill', '#374151', 'important');
+        el.style.setProperty('opacity', '0.5', 'important');
+      });
+    }
+
+    // Connector nodes (double circle, r=8.61) – style based on cluster availability
+    const connectorCircle = nodeGroup.querySelector('.cls-9');
+    if (connectorCircle) {
+      connectorCircle.style.setProperty('stroke', cycle.available ? cycle.colorGlow : '#374151', 'important');
+    }
+  });
+}
+
+function injectCycleLabel(rootG, cycle) {
+  const text = document.createElementNS(NS, 'text');
+  text.setAttribute('x', cycle.labelX);
+  text.setAttribute('y', cycle.labelY);
+  text.setAttribute('text-anchor', 'middle');
+  text.setAttribute('fill', cycle.available ? cycle.colorGlow : 'rgba(255,255,255,0.2)');
+  text.setAttribute('font-size', '24');
+  text.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif');
+  text.setAttribute('font-weight', '200');
+  text.setAttribute('letter-spacing', '5');
+  text.textContent = cycle.label.toUpperCase();
+  rootG.appendChild(text);
+}
+
+// ── TOOLTIPS ─────────────────────────────────────────────────────────────
+
+function setupTooltips(svgEl) {
+  const tooltip = document.getElementById('tooltip');
+
+  svgEl.addEventListener('mouseover', e => {
+    // Check for node hover
+    const nodeGroup = e.target.closest('g[data-cycle] g');
+    if (nodeGroup) {
+      const cycleKey = e.target.closest('[data-cycle]')?.dataset.cycle;
+      const cycle = CYCLES.find(c => c.key === cycleKey);
+      if (!cycle) return;
+
+      // Find node index to get lesson name
+      const clusterGroup = e.target.closest('[data-cycle]');
+      const allNodes = [...clusterGroup.querySelectorAll('g')].filter(g => {
+        const c = g.querySelector('circle');
+        return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5;
+      });
+      const idx = allNodes.indexOf(nodeGroup);
+      const lesson = cycle.lessons[idx];
+
+      if (lesson) {
+        tooltip.textContent = lesson;
+        tooltip.style.borderColor = cycle.colorGlow + '44';
+        tooltip.classList.add('visible');
+      } else if (!cycle.available) {
+        tooltip.textContent = cycle.label + ' — Próximamente';
+        tooltip.classList.add('visible');
+      }
+    } else {
+      const cycleGroup = e.target.closest('[data-cycle]');
+      if (cycleGroup) {
+        const cycle = CYCLES.find(c => c.key === cycleGroup.dataset.cycle);
+        if (cycle && !cycle.available) {
+          tooltip.textContent = cycle.label + ' — Próximamente';
+          tooltip.classList.add('visible');
+        }
+      }
+    }
+  });
+
+  svgEl.addEventListener('mousemove', e => {
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top  = (e.clientY - 10) + 'px';
+  });
+
+  svgEl.addEventListener('mouseout', () => tooltip.classList.remove('visible'));
+}
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────
+
+const canvas  = document.getElementById('canvas');
+const viewport = document.getElementById('viewport');
+let scale = 0.88, tx = 0, ty = 0;
+let dragging = false, startX, startY;
+
+function applyTransform() {
+  canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+}
+
+// Mouse
+canvas.addEventListener('mousedown', e => {
+  dragging = true;
+  startX = e.clientX - tx;
+  startY = e.clientY - ty;
+  document.body.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  tx = e.clientX - startX;
+  ty = e.clientY - startY;
+  applyTransform();
+});
+window.addEventListener('mouseup', () => {
+  dragging = false;
+  document.body.classList.remove('dragging');
+});
+
+// Wheel zoom (cursor-centered)
+window.addEventListener('wheel', e => {
+  e.preventDefault();
+  const vr = viewport.getBoundingClientRect();
+  const mx = e.clientX - vr.left - vr.width  / 2;
+  const my = e.clientY - vr.top  - vr.height / 2;
+  const factor = e.deltaY < 0 ? 1.1 : 0.91;
+  const ns = Math.max(0.15, Math.min(8, scale * factor));
+  tx = mx - (mx - tx) * (ns / scale);
+  ty = my - (my - ty) * (ns / scale);
+  scale = ns;
+  applyTransform();
+}, { passive: false });
+
+// Touch
+let touchDist = null;
+window.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    dragging = true;
+    startX = e.touches[0].clientX - tx;
+    startY = e.touches[0].clientY - ty;
+  } else if (e.touches.length === 2) {
+    dragging = false;
+    touchDist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 1 && dragging) {
+    tx = e.touches[0].clientX - startX;
+    ty = e.touches[0].clientY - startY;
+    applyTransform();
+  } else if (e.touches.length === 2 && touchDist) {
+    const d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    scale = Math.max(0.15, Math.min(8, scale * d / touchDist));
+    touchDist = d;
+    applyTransform();
+  }
+}, { passive: false });
+
+window.addEventListener('touchend', () => { dragging = false; touchDist = null; });
+
+// Buttons
+document.getElementById('zoomIn').addEventListener('click', () => {
+  scale = Math.min(8, scale * 1.25); applyTransform();
+});
+document.getElementById('zoomOut').addEventListener('click', () => {
+  scale = Math.max(0.15, scale * 0.8); applyTransform();
+});
+document.getElementById('zoomReset').addEventListener('click', () => {
+  scale = 0.88; tx = 0; ty = 0; applyTransform();
+});
+
+applyTransform();
+init();
+</script>
+</body>
+</html>
