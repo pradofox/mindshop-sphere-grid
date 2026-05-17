@@ -1817,6 +1817,7 @@ window.addEventListener('wheel', e => {
 let touchDist = null;
 window.addEventListener('touchstart', e => {
   if (fogActive()) return;
+  if (e.target.closest('#panel')) return;   // el panel maneja sus propios toques (scroll/selección)
   if (e.touches.length === 1) {
     dragging = true;
     startX = e.touches[0].clientX - tx; startY = e.touches[0].clientY - ty;
@@ -1827,6 +1828,7 @@ window.addEventListener('touchstart', e => {
   }
 }, { passive: true });
 window.addEventListener('touchmove', e => {
+  if (e.target.closest('#panel')) return;   // no bloquear scroll ni selección de texto del panel
   e.preventDefault();
   if (e.touches.length === 1 && dragging) {
     tx = e.touches[0].clientX - startX; ty = e.touches[0].clientY - startY; applyTransform();
