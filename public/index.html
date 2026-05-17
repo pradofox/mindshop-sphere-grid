@@ -122,15 +122,6 @@
     #splash-btn:hover, #splash-btn:active {
       border-color: rgba(0,193,202,0.55); color: rgba(0,193,202,0.95);
     }
-    #splash-mute {
-      display: block; margin: 22px auto 0;
-      background: none; border: none; padding: 6px 12px;
-      font-family: 'Montserrat', sans-serif; font-size: 1.1rem;
-      color: rgba(255,255,255,0.45); cursor: pointer;
-      transition: color 0.2s;
-    }
-    #splash-mute:hover { color: rgba(255,255,255,0.75); }
-    #splash-mute.muted { color: rgba(255,255,255,0.18); text-decoration: line-through; }
 
     #viewport {
       position: fixed; inset: 0; z-index: 2;
@@ -523,7 +514,6 @@
     <div id="splash-title">Mindshop</div>
     <div id="splash-sub">Sphere Grid · Mapa Filosófico</div>
     <button id="splash-btn">Iniciar</button>
-    <button id="splash-mute" title="Sonido al iniciar">♪</button>
   </div>
 </div>
 
@@ -874,14 +864,6 @@ async function init() {
   setupLegendHighlight();
   setupPanel();
   setupControls();
-
-  document.getElementById('splash-mute').addEventListener('click', () => {
-    soundMuted = !soundMuted;
-    const btn = document.getElementById('splash-mute');
-    btn.classList.toggle('muted', soundMuted);
-    btn.title = soundMuted ? 'Sin sonido' : 'Sonido al iniciar';
-    document.getElementById('muteBtn').classList.toggle('muted', soundMuted);
-  });
 
   document.getElementById('splash-btn').addEventListener('click', () => {
     initAudio();
