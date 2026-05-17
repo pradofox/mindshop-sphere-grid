@@ -5,23 +5,21 @@ export const cycle = defineType({
   title: 'Ciclo',
   type: 'document',
   fields: [
-    defineField({ name: 'key', title: 'Key (ID interno)', type: 'slug', options: { source: 'label' }, validation: r => r.required() }),
-    defineField({ name: 'order', title: 'Orden en el grid', type: 'number', validation: r => r.required() }),
-    defineField({ name: 'label', title: 'Nombre del ciclo', type: 'string', validation: r => r.required() }),
-    defineField({ name: 'color', title: 'Color hex', type: 'string', initialValue: '#2244CC' }),
-    defineField({ name: 'glow', title: 'Color de glow hex', type: 'string', initialValue: '#5577EE' }),
-    defineField({ name: 'hubCx', title: 'Posición X del hub (SVG)', type: 'number' }),
-    defineField({ name: 'hubCy', title: 'Posición Y del hub (SVG)', type: 'number' }),
-    defineField({ name: 'prospectusUrl', title: 'Link al prospectus (PDF Google Drive)', type: 'url' }),
-    defineField({ name: 'buyUrl', title: 'Link de compra / inscripción', type: 'url' }),
-    defineField({
-      name: 'nodes',
-      title: 'Nodos / Lecciones',
-      type: 'array',
-      of: [{ type: 'reference', to: [{ type: 'node' }] }],
-    }),
+    // ── Lo que el equipo de Mateus edita ──────────────────────────────────────
+    defineField({ name: 'label',         title: 'Nombre del ciclo',            type: 'string',  validation: r => r.required() }),
+    defineField({ name: 'prospectusUrl', title: 'Link al prospectus (PDF)',     type: 'url' }),
+    defineField({ name: 'buyUrl',        title: 'Link de inscripción / compra', type: 'url' }),
+
+    // ── Técnico — no tocar ────────────────────────────────────────────────────
+    defineField({ name: 'key',   title: 'ID interno', type: 'slug', options: { source: 'label' }, readOnly: true, hidden: true }),
+    defineField({ name: 'order', title: 'Orden',      type: 'number', readOnly: true, hidden: true }),
+    defineField({ name: 'color', title: 'Color',      type: 'string', readOnly: true, hidden: true }),
+    defineField({ name: 'glow',  title: 'Glow',       type: 'string', readOnly: true, hidden: true }),
+    defineField({ name: 'hubCx', title: 'Hub X',      type: 'number', readOnly: true, hidden: true }),
+    defineField({ name: 'hubCy', title: 'Hub Y',      type: 'number', readOnly: true, hidden: true }),
+    defineField({ name: 'nodes', title: 'Nodos',      type: 'array', of: [{ type: 'reference', to: [{ type: 'node' }] }], hidden: true }),
   ],
   preview: {
-    select: { title: 'label', subtitle: 'key.current' },
+    select: { title: 'label' },
   },
 })
