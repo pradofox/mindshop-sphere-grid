@@ -385,7 +385,7 @@
     }
 
     /* ── Custom cursor ─────────────────────────────────────────────────────── */
-    html, body, body * { cursor: none !important; }
+    /* cursor del sistema siempre visible; el dot es un efecto encima, no reemplazo */
     @media (pointer: coarse) { html, body, body * { cursor: auto !important; } }
     #cursor-dot {
       position: fixed; z-index: 99999; pointer-events: none;
