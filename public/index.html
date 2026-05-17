@@ -700,18 +700,49 @@ let visualizerStep   = 0;
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 
+// Devuelve los nodos satélite en el orden de lectura (lección 1 → 12).
+// Recorrido en serpentina: anillo exterior → medio → interior, alternando
+// dirección en cada anillo, empezando por el nodo alineado con el radio que
+// apunta al centro del grid y terminando junto al hub del ciclo.
 function getSortedNodes(group) {
   const CX = 540, CY = 540.15;
-  return [...group.querySelectorAll('g')].filter(g => {
+  const satCircle = ng => [...ng.querySelectorAll('circle')]
+    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+  const sats = [...group.querySelectorAll('g')].filter(g => {
     const c = g.querySelector('circle');
     return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5;
-  }).sort((a, b) => {
-    const dc = ng => {
-      const c = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
-      return c ? Math.hypot(parseFloat(c.getAttribute('cx')) - CX, parseFloat(c.getAttribute('cy')) - CY) : Infinity;
-    };
-    return dc(a) - dc(b);
   });
+  const hubC = [...group.querySelectorAll('circle')]
+    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
+  if (!hubC) return sats;
+  const hx = parseFloat(hubC.getAttribute('cx')), hy = parseFloat(hubC.getAttribute('cy'));
+  const TAU = Math.PI * 2;
+  const norm = a => ((a % TAU) + TAU) % TAU;
+
+  const info = sats.map(g => {
+    const c = satCircle(g) || g.querySelector('circle');
+    const x = parseFloat(c.getAttribute('cx')), y = parseFloat(c.getAttribute('cy'));
+    return { g, dist: Math.hypot(x - hx, y - hy), ang: Math.atan2(y - hy, x - hx) };
+  });
+
+  // Agrupar en anillos por distancia al hub (de afuera hacia adentro)
+  const rings = [];
+  [...info].sort((a, b) => b.dist - a.dist).forEach(n => {
+    let ring = rings.find(r => Math.abs(r.dist - n.dist) < 8);
+    if (!ring) { ring = { dist: n.dist, nodes: [] }; rings.push(ring); }
+    ring.nodes.push(n);
+  });
+
+  let startAng = Math.atan2(CY - hy, CX - hx), dir = -1;
+  const ordered = [];
+  rings.forEach(ring => {
+    ring.nodes.forEach(n => { n.t = norm(dir * (n.ang - startAng)); });
+    ring.nodes.sort((a, b) => a.t - b.t);
+    ordered.push(...ring.nodes);
+    startAng = ring.nodes[ring.nodes.length - 1].ang;
+    dir = -dir;
+  });
+  return ordered.map(n => n.g);
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
