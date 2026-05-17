@@ -477,11 +477,11 @@
 </div>
 
 <div id="legend">
-  <div class="legend-item" data-cycle="history">    <div class="legend-dot" style="background:var(--blue)"></div>History</div>
-  <div class="legend-item" data-cycle="ethics">     <div class="legend-dot" style="background:var(--red)"></div>Ethics</div>
-  <div class="legend-item" data-cycle="aesthetics"> <div class="legend-dot" style="background:var(--green)"></div>Aesthetics</div>
-  <div class="legend-item" data-cycle="epistemology"><div class="legend-dot" style="background:var(--gold)"></div>Epistemology</div>
-  <div class="legend-item" data-cycle="metaphysics"> <div class="legend-dot" style="background:var(--purple)"></div>Metaphysics</div>
+  <div class="legend-item" data-cycle="history">    <div class="legend-dot" style="background:var(--blue)"></div>Historia</div>
+  <div class="legend-item" data-cycle="ethics">     <div class="legend-dot" style="background:var(--red)"></div>Ética</div>
+  <div class="legend-item" data-cycle="aesthetics"> <div class="legend-dot" style="background:var(--green)"></div>Estética</div>
+  <div class="legend-item" data-cycle="epistemology"><div class="legend-dot" style="background:var(--gold)"></div>Epistemología</div>
+  <div class="legend-item" data-cycle="metaphysics"> <div class="legend-dot" style="background:var(--purple)"></div>Metafísica</div>
 </div>
 
 <div id="zoom-controls">
@@ -650,7 +650,7 @@ const GREY_ICON   = 'rgba(90,110,130,0.18)';
 // Cuando tengamos el projectId de Sanity, reemplazar SANITY_PROJECT_ID y
 // poner SANITY_ENABLED = true. El site carga datos del CMS y cae al fallback
 // hardcodeado si Sanity no responde.
-const SANITY_ENABLED    = false;
+const SANITY_ENABLED    = true;
 const SANITY_PROJECT_ID = 'wo3dfzz8';
 const SANITY_DATASET    = 'production';
 const SANITY_API_VER    = '2024-01-01';
@@ -676,10 +676,6 @@ async function fetchFromSanity() {
       DESCS[c.key]       = c.lessons.map(n => n.description || '');
     }
   });
-}
-
-if (SANITY_ENABLED) {
-  fetchFromSanity().catch(err => console.warn('Sanity no disponible, usando datos locales:', err));
 }
 
 // ── STATE ──────────────────────────────────────────────────────────────────────
@@ -721,6 +717,10 @@ function getSortedNodes(group) {
 // ── INIT ──────────────────────────────────────────────────────────────────────
 
 async function init() {
+  if (SANITY_ENABLED) {
+    try { await fetchFromSanity(); }
+    catch (err) { console.warn('Sanity no disponible, usando datos locales:', err); }
+  }
   const svgText = await fetch('./sphere-grid.svg').then(r => r.text());
   const parser  = new DOMParser();
   const svgEl   = parser.parseFromString(svgText, 'image/svg+xml').querySelector('svg');
@@ -1019,6 +1019,8 @@ function setupLegendHighlight() {
   const legendEl = document.getElementById('legend');
   legendEl.querySelectorAll('.legend-item[data-cycle]').forEach(item => {
     const key = item.dataset.cycle;
+    const cycle = CYCLES.find(c => c.key === key);
+    if (cycle && item.lastChild) item.lastChild.textContent = cycle.label;
     item.addEventListener('mouseenter', () => {
       legendEl.classList.add('highlighting');
       item.classList.add('hovered');
