@@ -20,6 +20,40 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "EducationalOrganization",
+        "@id": "https://mindshop.cafe/#org",
+        "name": "Mindshop",
+        "url": "https://mindshop.cafe",
+        "description": "Escuela de filosofía en línea en español. Cursos sobre historia del pensamiento, metafísica, epistemología, estética y ética."
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://mindshop.sopadeletras.art/#website",
+        "url": "https://mindshop.sopadeletras.art",
+        "name": "Mindshop · Sphere Grid",
+        "description": "Mapa interactivo de la filosofía: explora conceptos, pensadores y tradiciones a lo largo de cinco ciclos de estudio.",
+        "inLanguage": "es",
+        "publisher": { "@id": "https://mindshop.cafe/#org" }
+      },
+      {
+        "@type": "ItemList",
+        "name": "Ciclos de estudio de Mindshop",
+        "itemListElement": [
+          { "@type": "Course", "position": 1, "name": "Historia", "description": "Recorrido por la historia del pensamiento filosófico, de los presocráticos a la filosofía contemporánea.", "provider": { "@id": "https://mindshop.cafe/#org" } },
+          { "@type": "Course", "position": 2, "name": "Metafísica", "description": "El estudio de la naturaleza última de la realidad, el ser y la existencia.", "provider": { "@id": "https://mindshop.cafe/#org" } },
+          { "@type": "Course", "position": 3, "name": "Epistemología", "description": "La teoría del conocimiento: qué podemos saber y cómo lo justificamos.", "provider": { "@id": "https://mindshop.cafe/#org" } },
+          { "@type": "Course", "position": 4, "name": "Estética", "description": "La filosofía del arte, la belleza y la experiencia sensible.", "provider": { "@id": "https://mindshop.cafe/#org" } },
+          { "@type": "Course", "position": 5, "name": "Ética", "description": "La reflexión sobre el bien, la acción correcta y cómo vivir.", "provider": { "@id": "https://mindshop.cafe/#org" } }
+        ]
+      }
+    ]
+  }
+  </script>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -455,6 +489,22 @@
   </style>
 </head>
 <body>
+
+<noscript>
+  <div style="max-width:680px;margin:0 auto;padding:48px 24px;color:#cdd6e0;font-family:sans-serif;line-height:1.65;">
+    <h1>Mindshop · Sphere Grid</h1>
+    <p>Un mapa interactivo de la filosofía: explora conceptos, pensadores y tradiciones a lo largo de cinco ciclos de estudio. Mindshop es una escuela de filosofía en línea en español.</p>
+    <h2>Los cinco ciclos</h2>
+    <ul>
+      <li><strong>Historia</strong> — recorrido por la historia del pensamiento filosófico, de los presocráticos a la filosofía contemporánea.</li>
+      <li><strong>Metafísica</strong> — el estudio de la naturaleza última de la realidad, el ser y la existencia.</li>
+      <li><strong>Epistemología</strong> — la teoría del conocimiento: qué podemos saber y cómo lo justificamos.</li>
+      <li><strong>Estética</strong> — la filosofía del arte, la belleza y la experiencia sensible.</li>
+      <li><strong>Ética</strong> — la reflexión sobre el bien, la acción correcta y cómo vivir.</li>
+    </ul>
+    <p>Activa JavaScript para explorar el mapa interactivo completo.</p>
+  </div>
+</noscript>
 
 <svg id="grain-overlay" aria-hidden="true">
   <filter id="grain-filter">
