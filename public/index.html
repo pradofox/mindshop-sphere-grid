@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Mindshop · Sphere Grid</title>
   <link rel="icon" type="image/png" href="./favicon.png">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mindshop">
+  <meta name="description" content="Un mapa interactivo de filosofía. Explora ideas, pensadores y tradiciones del pensamiento humano.">
+  <meta property="og:title" content="Mindshop · Sphere Grid">
+  <meta property="og:description" content="Un mapa interactivo de filosofía. Explora ideas, pensadores y tradiciones del pensamiento humano.">
+  <meta property="og:image" content="https://mindshop.sopadeletras.art/bg.jpg">
+  <meta property="og:url" content="https://mindshop.sopadeletras.art">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://mindshop.sopadeletras.art/bg.jpg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400&display=swap" rel="stylesheet">
@@ -12,16 +24,13 @@
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
     :root {
-      --history:       #3b82f6;
-      --history-glow:  #60a5fa;
-      --ethics:        #ef4444;
-      --ethics-glow:   #f87171;
-      --aesthetics:    #22c55e;
-      --aesthetics-glow: #4ade80;
-      --epistemology:  #f59e0b;
-      --metaphysics:   #a78bfa;
-      --locked:        #2d3748;
-      --bg:            #060a0e;
+      --teal:  #00C1CA;
+      --blue:  #2244CC; --blue-glow:  #5577EE;
+      --red:   #CC1A18; --red-glow:   #EE4444;
+      --purple:#8022CC; --purple-glow:#AA55EE;
+      --green: #18B018; --green-glow: #44DD44;
+      --gold:  #CC9800; --gold-glow:  #EEBB22;
+      --bg:    #060a0e;
     }
 
     html, body {
@@ -30,38 +39,70 @@
       overflow: hidden;
       font-family: 'Montserrat', -apple-system, sans-serif;
       cursor: grab;
-      user-select: none;
-      -webkit-user-select: none;
+      user-select: none; -webkit-user-select: none;
     }
     body.dragging { cursor: grabbing; }
 
-    /* Background: foggy mountain at low opacity */
     #bg-layer {
-      position: fixed; inset: 0; z-index: 0;
-      background: url('./bg.png') center center / cover no-repeat;
-      opacity: 0.18;
-      filter: grayscale(0.3) brightness(0.6);
+      position: fixed; inset: -10%; z-index: 0;
+      background: url('./bg.jpg') center/cover no-repeat;
+      opacity: 0.72; pointer-events: none;
+      will-change: transform;
+      transition: opacity 1.5s ease-out;
+    }
+    #vignette {
+      position: fixed; inset: 0; z-index: 1;
+      background: radial-gradient(ellipse 75% 75% at 50% 50%, transparent 35%, rgba(6,10,14,0.85) 100%);
       pointer-events: none;
     }
 
-    /* Vignette overlay */
-    #vignette {
-      position: fixed; inset: 0; z-index: 1;
-      background: radial-gradient(ellipse 70% 70% at 50% 50%, transparent 40%, rgba(6,10,14,0.85) 100%);
-      pointer-events: none;
+    #fog {
+      position: fixed; inset: 0; z-index: 50;
+      background: rgba(6,10,14,0.96);
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 1.4s ease-out;
+      touch-action: none;
     }
+    #fog.cleared { opacity: 0; pointer-events: none; touch-action: auto; }
+    #splash-title {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 200; font-size: clamp(1.8rem, 6vw, 2.8rem);
+      letter-spacing: 0.44em; color: #fff;
+      text-transform: uppercase; text-align: center;
+    }
+    #splash-sub {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 300; font-size: clamp(0.52rem, 1.6vw, 0.68rem);
+      letter-spacing: 0.3em; color: rgba(0,193,202,0.72);
+      text-transform: uppercase; text-align: center; margin-top: 10px;
+    }
+    #splash-btn {
+      display: block; margin: 56px auto 0;
+      background: none; border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 5px; padding: 14px 48px;
+      font-family: 'Montserrat', sans-serif; font-weight: 300;
+      font-size: 0.66rem; letter-spacing: 0.32em; text-transform: uppercase;
+      color: rgba(255,255,255,0.6); cursor: pointer;
+      transition: border-color 0.22s, color 0.22s;
+    }
+    #splash-btn:hover, #splash-btn:active {
+      border-color: rgba(0,193,202,0.55); color: rgba(0,193,202,0.95);
+    }
+    #splash-mute {
+      display: block; margin: 22px auto 0;
+      background: none; border: none; padding: 6px 12px;
+      font-family: 'Montserrat', sans-serif; font-size: 1.1rem;
+      color: rgba(255,255,255,0.45); cursor: pointer;
+      transition: color 0.2s;
+    }
+    #splash-mute:hover { color: rgba(255,255,255,0.75); }
+    #splash-mute.muted { color: rgba(255,255,255,0.18); text-decoration: line-through; }
 
     #viewport {
       position: fixed; inset: 0; z-index: 2;
       display: flex; align-items: center; justify-content: center;
     }
-
-    #canvas {
-      transform-origin: center center;
-      will-change: transform;
-    }
-
-    /* SVG: full natural size, vectors stay crisp at any zoom */
+    #canvas { transform-origin: center center; }
     #sphere-grid {
       width: 1080px; height: 1080px;
       overflow: visible;
@@ -69,38 +110,114 @@
       text-rendering: geometricPrecision;
     }
 
-    /* Cluster group glow — CSS drop-shadow re-renders at current resolution, no pixelation */
-    [data-cycle="history"]     { filter: drop-shadow(0 0 8px rgba(59,130,246,0.5)); }
-    [data-cycle="ethics"]      { filter: drop-shadow(0 0 8px rgba(239,68,68,0.5)); }
-    [data-cycle="aesthetics"]  { filter: drop-shadow(0 0 8px rgba(34,197,94,0.5)); }
-    [data-cycle="epistemology"]{ filter: drop-shadow(0 0 4px rgba(245,158,11,0.2)); }
-    [data-cycle="metaphysics"] { filter: drop-shadow(0 0 4px rgba(167,139,250,0.2)); }
+    [data-cycle="history"]      { filter: drop-shadow(0 0 8px rgba(85,119,238,0.45)); }
+    [data-cycle="ethics"]       { filter: drop-shadow(0 0 8px rgba(238,68,68,0.45));  }
+    [data-cycle="aesthetics"]   { filter: drop-shadow(0 0 8px rgba(68,221,68,0.45));  }
+    [data-cycle="epistemology"] { filter: drop-shadow(0 0 8px rgba(238,187,34,0.45)); }
+    [data-cycle="metaphysics"]  { filter: drop-shadow(0 0 8px rgba(170,85,238,0.45)); }
 
-    /* Node state glow — CSS, not SVG filters */
-    .node-completed { filter: drop-shadow(0 0 7px currentColor); }
+    @keyframes hub-breathe {
+      0%, 100% { opacity: 0.75; }
+      50%       { opacity: 1.0; }
+    }
+    .hub-shine { animation: hub-breathe 3.5s ease-in-out infinite; }
 
-    /* Pulse rings use SVG <animate> — no CSS needed here */
+    @keyframes node-click-flash {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.35); }
+      100% { transform: scale(1); }
+    }
+    .node-click-flash {
+      animation: node-click-flash 0.28s ease-out;
+      transform-origin: center; transform-box: fill-box;
+    }
 
-    /* UI */
+    #center-portrait {
+      position: fixed; border-radius: 50%; overflow: hidden;
+      z-index: 4; pointer-events: none;
+      transition: opacity 1.4s ease-out;
+    }
+    #center-portrait img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center 18%;
+      filter: grayscale(1) brightness(0.75); display: block;
+    }
+    .viz-active #center-portrait { opacity: 0.28; }
+
+    /* Ripple */
+    @keyframes ripple-out {
+      to { transform: translate(-50%,-50%) scale(4.5); opacity: 0; }
+    }
+    .sg-ripple {
+      position: fixed; pointer-events: none; z-index: 25;
+      width: 26px; height: 26px; border-radius: 50%;
+      border: 1.5px solid currentColor;
+      transform: translate(-50%,-50%) scale(1);
+      opacity: 0.65;
+      animation: ripple-out 0.65s ease-out forwards;
+    }
+
+    /* Screensaver / Visualizer */
+    #canvas { transition: filter 1.6s ease-out; }
+    .viz-active #canvas { filter: brightness(0.06) saturate(0.3); }
+
+    @keyframes viz-core-fade {
+      0%   { opacity: 0; }
+      14%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes viz-glow-expand {
+      0%   { opacity: 0;    transform: scale(0.75); }
+      14%  { opacity: 0.62; transform: scale(1); }
+      100% { opacity: 0;    transform: scale(1.7); }
+    }
+    @keyframes viz-micro-breathe {
+      0%   { opacity: 0;    transform: scale(0.85); }
+      25%  { opacity: 0.22; transform: scale(1); }
+      100% { opacity: 0;    transform: scale(1.4); }
+    }
+    @keyframes viz-micro-core {
+      0%   { opacity: 0; }
+      18%  { opacity: 0.42; }
+      100% { opacity: 0; }
+    }
+    #viz-pulse-layer  { position: fixed; inset: 0; z-index: 5; pointer-events: none; overflow: hidden; }
+    .viz-dot          { position: absolute; border-radius: 50%; pointer-events: none; transform-origin: center; mix-blend-mode: screen; }
+    .viz-dot.core     { animation: viz-core-fade   4.5s ease-out forwards; }
+    .viz-dot.glow     { animation: viz-glow-expand 4.5s ease-out forwards; filter: blur(18px); }
+    .viz-dot.glow.outer { filter: blur(40px); }
+    .viz-dot.micro    { animation: viz-micro-breathe 8s ease-out forwards; filter: blur(36px); }
+    .viz-dot.micro-core { animation: viz-micro-core 5.5s ease-out forwards; filter: blur(3px); }
+
+    #legend, #zoom-controls, #branding { transition: opacity 0.8s ease-out; }
+    .viz-active #legend,
+    .viz-active #zoom-controls,
+    .viz-active #branding { opacity: 0; pointer-events: none; }
+
+    /* Legend */
     #legend {
-      position: fixed;
-      top: 22px; left: 22px; z-index: 20;
+      position: fixed; top: 22px; left: 22px; z-index: 20;
       display: flex; flex-direction: column; gap: 10px;
     }
     .legend-item {
       display: flex; align-items: center; gap: 9px;
-      font-family: 'Montserrat', sans-serif;
       font-size: 9.5px; font-weight: 300;
       letter-spacing: 0.18em; text-transform: uppercase;
       color: rgba(255,255,255,0.65);
+      cursor: pointer;
+      transition: opacity 0.22s ease-out, color 0.22s ease-out;
     }
-    .legend-item.locked { color: rgba(255,255,255,0.22); }
     .legend-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    #legend.highlighting .legend-item        { opacity: 0.25; color: rgba(255,255,255,0.25); }
+    #legend.highlighting .legend-item.hovered{ opacity: 1;    color: rgba(255,255,255,0.95); }
 
+    /* Controls */
     #zoom-controls {
-      position: fixed;
-      bottom: 22px; right: 22px; z-index: 20;
+      position: fixed; bottom: 22px; right: 22px; z-index: 60;
       display: flex; gap: 6px;
+    }
+    #fog:not(.cleared) ~ #zoom-controls .zoom-btn:not(#fullscreenBtn):not(#muteBtn) {
+      opacity: 0; pointer-events: none;
     }
     .zoom-btn {
       width: 34px; height: 34px;
@@ -110,425 +227,738 @@
       border-radius: 8px; cursor: pointer;
       font-size: 17px; display: flex;
       align-items: center; justify-content: center;
-      transition: background 0.15s, color 0.15s;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
     }
-    .zoom-btn:hover { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+    .zoom-btn:hover  { background: rgba(255,255,255,0.12); color: rgba(255,255,255,0.8); }
+    .zoom-btn.active { background: rgba(0,193,202,0.15); border-color: rgba(0,193,202,0.4); color: var(--teal); }
+    .zoom-btn.muted  { color: rgba(255,255,255,0.2); }
 
     #branding {
       position: fixed; bottom: 22px; left: 22px; z-index: 20;
-      font-family: 'Montserrat', sans-serif;
       font-size: 9px; font-weight: 300;
       letter-spacing: 0.22em; text-transform: uppercase;
       color: rgba(255,255,255,0.12);
     }
 
+    /* Tooltip */
     .sg-tooltip {
       position: fixed;
       background: rgba(6,10,14,0.92);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 6px; padding: 5px 11px;
-      font-family: 'Montserrat', sans-serif;
       font-size: 9.5px; font-weight: 300;
       letter-spacing: 0.12em; text-transform: uppercase;
       color: rgba(255,255,255,0.85);
       pointer-events: none; z-index: 30;
-      opacity: 0; transition: opacity 0.12s;
-      white-space: nowrap;
+      opacity: 0; transition: opacity 0.12s; white-space: nowrap;
     }
     .sg-tooltip.visible { opacity: 1; }
+
+    /* Side Panel */
+    #panel-backdrop {
+      position: fixed; inset: 0; z-index: 39;
+      background: transparent;
+      display: none;
+    }
+    #panel-backdrop.show { display: block; }
+    @media (max-width: 640px) {
+      #panel-backdrop.show { background: rgba(6,10,14,0.55); }
+    }
+
+    #panel {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: 310px;
+      background: rgba(7,12,18,0.97);
+      border-left: 1px solid rgba(255,255,255,0.07);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      z-index: 40;
+      transform: translateX(100%);
+      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    #panel.open { transform: translateX(0); }
+
+    @media (max-width: 640px) {
+      #panel {
+        top: auto; left: 0; right: 0; bottom: 0;
+        width: 100%; height: 62%;
+        border-left: none;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+      }
+      #panel.open { transform: translateY(0); }
+    }
+
+    #panel-handle {
+      display: none;
+      width: 36px; height: 4px;
+      background: rgba(255,255,255,0.18);
+      border-radius: 2px;
+      margin: 14px auto 4px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 640px) { #panel-handle { display: block; } }
+
+    #panel-scroll {
+      flex: 1; overflow-y: auto;
+      padding: 24px 24px 40px;
+      -webkit-overflow-scrolling: touch;
+    }
+    #panel-scroll::-webkit-scrollbar { width: 3px; }
+    #panel-scroll::-webkit-scrollbar-track { background: transparent; }
+    #panel-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    #panel-close {
+      position: absolute; top: 18px; right: 18px;
+      background: none; border: none;
+      color: rgba(255,255,255,0.3); font-size: 20px;
+      cursor: pointer; line-height: 1; z-index: 1;
+      transition: color 0.15s;
+    }
+    #panel-close:hover { color: rgba(255,255,255,0.7); }
+    @media (max-width: 640px) { #panel-close { top: 22px; } }
+
+    #panel-cycle-chip {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 18px;
+    }
+    #panel-cycle-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+    }
+    #panel-cycle-name {
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 0.22em; text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+    #panel-lesson-num {
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 0.14em; color: rgba(255,255,255,0.25);
+      margin-bottom: 10px;
+    }
+    #panel-lesson-title {
+      font-size: 17px; font-weight: 300;
+      letter-spacing: 0.03em; line-height: 1.45;
+      color: rgba(255,255,255,0.92);
+      margin-bottom: 18px;
+    }
+    #panel-divider {
+      height: 1px; background: rgba(255,255,255,0.06);
+      margin-bottom: 18px;
+    }
+    #panel-lesson-desc {
+      font-size: 12px; font-weight: 300;
+      line-height: 1.85; letter-spacing: 0.02em;
+      color: rgba(255,255,255,0.5);
+    }
+    #panel-visited-badge {
+      display: none;
+      margin-top: 22px;
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: rgba(255,255,255,0.28);
+    }
+    #panel-visited-badge.show { display: block; }
+    #panel-toggle-visited {
+      margin-top: 20px;
+      background: none;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 7px 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+      display: block; width: 100%;
+    }
+    #panel-toggle-visited:hover { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.6); }
+
+    /* ── Grain overlay ─────────────────────────────────────────────────────── */
+    #grain-overlay {
+      position: fixed; inset: 0; width: 100%; height: 100%;
+      z-index: 9997; pointer-events: none; opacity: 0.07;
+    }
+
+    /* ── Custom cursor ─────────────────────────────────────────────────────── */
+    html, body, body * { cursor: none !important; }
+    @media (pointer: coarse) { html, body, body * { cursor: auto !important; } }
+    #cursor-dot {
+      position: fixed; z-index: 99999; pointer-events: none;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: white; mix-blend-mode: difference;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.25s ease;
+      opacity: 0; will-change: left, top, width, height;
+    }
+    #cursor-dot.active   { opacity: 1; }
+    #cursor-dot.btn-hover { opacity: 0.55; }
+    @media (pointer: coarse) { #cursor-dot { display: none; } }
+
+    /* ── Nav prev/next ─────────────────────────────────────────────────────── */
+    #panel-nav {
+      display: flex; gap: 8px; margin-top: 20px;
+    }
+    .panel-nav-btn {
+      flex: 1; background: none;
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      padding: 7px 0;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 11px; font-weight: 300; letter-spacing: 0.08em;
+      color: rgba(255,255,255,0.35);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .panel-nav-btn:not(:disabled):hover { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.7); }
+    .panel-nav-btn:disabled { opacity: 0.2; }
+
+    /* ── Prospectus ─────────────────────────────────────────────────────────── */
+    #panel-prospectus { margin-top: 12px; }
+    #panel-prospectus-btn {
+      display: block; width: 100%; text-align: center; text-decoration: none;
+      background: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px;
+      padding: 7px 14px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; font-weight: 300; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      transition: border-color 0.15s, color 0.15s;
+    }
+    #panel-prospectus-btn:hover { border-color: rgba(255,255,255,0.28); color: rgba(255,255,255,0.7); }
+    #panel-buy { margin-top: 10px; }
+    #panel-buy-btn {
+      display: block; width: 100%; padding: 11px 0;
+      border-radius: 6px; border: 1.5px solid currentColor;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.04em;
+      text-align: center; text-decoration: none;
+      background: rgba(255,255,255,0.06);
+      color: inherit;
+      transition: background 0.2s, opacity 0.2s;
+    }
+    #panel-buy-btn:hover { background: rgba(255,255,255,0.14); }
+    #panel-prospectus-soon {
+      display: block; text-align: center;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px; font-weight: 300; letter-spacing: 0.16em; text-transform: uppercase;
+      color: rgba(255,255,255,0.15); padding: 7px 0;
+    }
+
+    /* ── Hub panel overrides ───────────────────────────────────────────────── */
+    #panel.hub-panel #panel-toggle-visited,
+    #panel.hub-panel #panel-visited-badge,
+    #panel.hub-panel #panel-nav { display: none; }
+
+    /* ── Desktop: panel-backdrop lets SVG clicks through ──────────────────── */
+    @media (min-width: 641px) { #panel-backdrop { pointer-events: none; } }
   </style>
 </head>
 <body>
 
+<svg id="grain-overlay" aria-hidden="true">
+  <filter id="grain-filter">
+    <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch"/>
+    <feColorMatrix type="saturate" values="0"/>
+  </filter>
+  <rect width="100%" height="100%" filter="url(#grain-filter)"/>
+</svg>
+<div id="cursor-dot"></div>
+
 <div id="bg-layer"></div>
 <div id="vignette"></div>
+<div id="fog">
+  <div style="text-align:center;padding:0 32px">
+    <div id="splash-title">Mindshop</div>
+    <div id="splash-sub">Sphere Grid · Mapa Filosófico</div>
+    <button id="splash-btn">Iniciar</button>
+    <button id="splash-mute" title="Sonido al iniciar">♪</button>
+  </div>
+</div>
 
 <div id="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:var(--history)"></div>History</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--ethics)"></div>Ethics</div>
-  <div class="legend-item"><div class="legend-dot" style="background:var(--aesthetics)"></div>Aesthetics</div>
-  <div class="legend-item locked"><div class="legend-dot" style="background:var(--locked)"></div>Epistemology</div>
-  <div class="legend-item locked"><div class="legend-dot" style="background:var(--locked)"></div>Metaphysics</div>
+  <div class="legend-item" data-cycle="history">    <div class="legend-dot" style="background:var(--blue)"></div>History</div>
+  <div class="legend-item" data-cycle="ethics">     <div class="legend-dot" style="background:var(--red)"></div>Ethics</div>
+  <div class="legend-item" data-cycle="aesthetics"> <div class="legend-dot" style="background:var(--green)"></div>Aesthetics</div>
+  <div class="legend-item" data-cycle="epistemology"><div class="legend-dot" style="background:var(--gold)"></div>Epistemology</div>
+  <div class="legend-item" data-cycle="metaphysics"> <div class="legend-dot" style="background:var(--purple)"></div>Metaphysics</div>
 </div>
 
 <div id="zoom-controls">
-  <button class="zoom-btn" id="zoomIn">+</button>
-  <button class="zoom-btn" id="zoomOut">−</button>
-  <button class="zoom-btn" id="zoomReset">⊙</button>
+  <button class="zoom-btn" id="zoomIn"       title="Zoom in (+)">+</button>
+  <button class="zoom-btn" id="zoomOut"      title="Zoom out (-)">−</button>
+  <button class="zoom-btn" id="zoomReset"    title="Reset (R)">⊙</button>
+  <button class="zoom-btn" id="visualizerBtn" title="Modo contemplativo">▷</button>
+  <button class="zoom-btn" id="muteBtn"      title="Sonido">♪</button>
+  <button class="zoom-btn" id="fullscreenBtn" title="Pantalla completa">
+    <svg id="fs-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M1 5V1h4M9 1h4v4M13 9v4H9M5 13H1V9"/>
+    </svg>
+  </button>
 </div>
 
 <div id="branding">mindshop.cafe</div>
 <div class="sg-tooltip" id="tooltip"></div>
 
-<div id="viewport">
-  <div id="canvas"></div>
+<div id="viewport"><div id="canvas"></div></div>
+<div id="center-portrait"><img src="./nietzsche.jpg" alt="Nietzsche"></div>
+
+<!-- Side panel -->
+<div id="panel-backdrop"></div>
+<div id="panel">
+  <div id="panel-handle"></div>
+  <button id="panel-close">×</button>
+  <div id="panel-scroll">
+    <div id="panel-cycle-chip">
+      <div id="panel-cycle-dot"></div>
+      <span id="panel-cycle-name"></span>
+    </div>
+    <div id="panel-lesson-num"></div>
+    <div id="panel-lesson-title"></div>
+    <div id="panel-divider"></div>
+    <p id="panel-lesson-desc"></p>
+    <div id="panel-visited-badge">✓ Visitado</div>
+    <button id="panel-toggle-visited">Marcar como visitada</button>
+    <div id="panel-nav">
+      <button class="panel-nav-btn" id="panel-prev">← Anterior</button>
+      <button class="panel-nav-btn" id="panel-next">Siguiente →</button>
+    </div>
+    <div id="panel-prospectus"></div>
+    <div id="panel-buy"></div>
+  </div>
 </div>
 
 <script>
 const NS = 'http://www.w3.org/2000/svg';
 
-// ── DATA ─────────────────────────────────────────────────────────────────
+// ── DATA ───────────────────────────────────────────────────────────────────────
+
 const CYCLES = [
-  {
-    key: 'history', label: 'History',
-    hubCx: 540, hubCy: 256.6,
-    color: '#3b82f6', colorDark: '#1e3a8a', glow: '#93c5fd',
-    available: true,
-    progress: { completed: [0,1,2,3,4,5], available: [6,7,8], locked: [9,10,11] },
-    labelX: 540, labelY: 70,
-    lessons: ['Bienvenido a Mindshop','Miedo a lo Desconocido','El Primer Filósofo','Cambio Inmutable','Sócrates, El Vagabundo','Sócrates, El Tábano','Platón, El Aristócrata','Platón, El Escolar','Aristóteles, Un Hombre','Aristóteles, El Filósofo','El Filósofo-Rey','Repaso Final']
-  },
-  {
-    key: 'metaphysics', label: 'Metaphysics',
-    hubCx: 270.03, hubCy: 452.75,
-    color: '#a78bfa', colorDark: '#3b0764', glow: '#c4b5fd',
-    available: false, labelX: 62, labelY: 453, lessons: []
-  },
-  {
-    key: 'epistemology', label: 'Epistemology',
-    hubCx: 373.15, hubCy: 770.12,
-    color: '#f59e0b', colorDark: '#451a03', glow: '#fcd34d',
-    available: false, labelX: 290, labelY: 1022, lessons: []
-  },
-  {
-    key: 'aesthetics', label: 'Aesthetics',
-    hubCx: 706.85, hubCy: 770.12,
-    color: '#22c55e', colorDark: '#052e16', glow: '#86efac',
-    available: true,
-    progress: { completed: [], available: [0,1], locked: [2,3,4,5,6,7,8,9,10,11] },
-    labelX: 792, labelY: 1022,
-    lessons: ['Introducción a la Estética','Platón y la Belleza','Aristóteles y el Arte','Hume y el Gusto','Kant y lo Sublime','Schopenhauer','Tolstoi','Nietzsche','Yuriko Saito','Repaso Final','Extra','Extra 2']
-  },
-  {
-    key: 'ethics', label: 'Ethics',
-    hubCx: 809.97, hubCy: 452.75,
-    color: '#ef4444', colorDark: '#450a0a', glow: '#fca5a5',
-    available: true,
-    progress: { completed: [], available: [0,1,2], locked: [3,4,5,6,7,8,9,10,11] },
-    labelX: 1018, labelY: 453,
-    lessons: ['Epicuro','Tomás de Aquino','David Hume','Immanuel Kant','Karl Marx','Friedrich Nietzsche','Ayn Rand','Simone de Beauvoir','Derek Parfit','Peter Singer','Repaso Final','Extra']
-  },
+  { key:'history',     label:'Historia',     hubCx:540,    hubCy:256.6,  color:'#2244CC', glow:'#5577EE', buyUrl: null,
+    lessons:['Bienvenido a Mindshop','Miedo a lo Desconocido','El Primer Filósofo','Cambio Inmutable','Sócrates, El Vagabundo','Sócrates, El Tábano','Platón, El Aristócrata','Platón, El Escolar','Aristóteles, Un Hombre','Aristóteles, El Filósofo','El Filósofo-Rey','Repaso Final'] },
+  { key:'metaphysics', label:'Metafísica', hubCx:270.03, hubCy:452.75, color:'#8022CC', glow:'#AA55EE', buyUrl: null,
+    lessons:['Introducción','Tales de Mileto','Parménides','Heráclito','Platón y las Ideas','Aristóteles y la Sustancia','Descartes','Spinoza','Leibniz','Kant y el Noúmeno','Hegel','Repaso Final'] },
+  { key:'epistemology',label:'Epistemología',hubCx:373.15, hubCy:770.12, color:'#CC9800', glow:'#EEBB22', buyUrl: null,
+    lessons:['Introducción','El Conocimiento','Platón y el Conocimiento','Aristóteles','Descartes y la Duda','Locke y el Empirismo','Hume','Kant','Popper','Kuhn','Feyerabend','Repaso Final'] },
+  { key:'aesthetics',  label:'Estética',  hubCx:706.85, hubCy:770.12, color:'#18B018', glow:'#44DD44', buyUrl: null,
+    lessons:['Introducción a la Estética','Platón y la Belleza','Aristóteles y el Arte','Hume y el Gusto','Kant y lo Sublime','Schopenhauer','Tolstoi','Nietzsche','Yuriko Saito','Repaso Final','Extra','Extra 2'] },
+  { key:'ethics',      label:'Ética',      hubCx:809.97, hubCy:452.75, color:'#CC1A18', glow:'#EE4444', buyUrl: null,
+    lessons:['Epicuro','Tomás de Aquino','David Hume','Immanuel Kant','Karl Marx','Friedrich Nietzsche','Ayn Rand','Simone de Beauvoir','Derek Parfit','Peter Singer','Repaso Final','Extra'] },
 ];
 
-// ── INIT ─────────────────────────────────────────────────────────────────
+const DESCS = {
+  history: [
+    'Mindshop es una exploración filosófica diseñada para el pensador contemporáneo. Cada nodo en este mapa es una puerta hacia una forma diferente de ver el mundo.',
+    'El impulso filosófico nace del asombro ante lo incomprensible. Los primeros griegos convirtieron ese miedo en la pregunta más audaz: ¿qué hay más allá de lo visible?',
+    'Tales de Mileto fue el primero en buscar explicaciones naturales para los fenómenos del mundo, proponiendo que todo proviene del agua. Lo revolucionario no fue la respuesta sino el método: razón en lugar de mito.',
+    'Heráclito observó que el río nunca es el mismo dos veces y sin embargo el río permanece. Esta paradoja entre el cambio constante y la permanencia subyacente define uno de los grandes debates de la filosofía occidental.',
+    'Sócrates no escribió nada y no cobró por enseñar: pasó su vida deambulando por Atenas, conversando con cualquiera que quisiera pensar. Su método era simple pero devastador: preguntar hasta que las certezas se derrumbaran.',
+    'Sócrates describía su misión como la de un tábano que picaba a Atenas para mantenerla despierta. Por eso Atenas lo condenó a muerte: las preguntas incómodas siempre tienen un precio.',
+    'Platón nació en una familia aristocrática y fue discípulo de Sócrates; la muerte de su maestro lo marcó profundamente y lo llevó a fundar la Academia. Sus diálogos son simultáneamente obras literarias y argumentos filosóficos de primer orden.',
+    'La teoría platónica de las Ideas propone que el mundo visible es apenas una sombra de una realidad más perfecta e inmutable. La mesa que vemos es imperfecta; la Idea de mesa es su modelo eterno e invariable.',
+    'Aristóteles fue discípulo de Platón durante veinte años pero construyó una filosofía radicalmente distinta: mientras Platón miraba hacia lo eterno, Aristóteles observaba y clasificaba el mundo concreto. Fue tutor de Alejandro Magno y fundó el Liceo.',
+    'Durante siglos, Aristóteles fue simplemente "El Filósofo". Sus escritos abarcaron biología, lógica, ética, política, retórica, poética y metafísica, construyendo el primer sistema filosófico enciclopédico de Occidente.',
+    'En La República, Platón imaginó una ciudad ideal gobernada por filósofos que habían contemplado la verdad. Esta idea plantea una pregunta que sigue abierta: ¿otorga el conocimiento el derecho o la obligación de gobernar?',
+    'Desde Tales hasta Aristóteles hemos visto cómo el pensamiento racional emergió como herramienta para entender el mundo. La historia de la filosofía griega es también la historia de nuestra forma de pensar.',
+  ],
+  metaphysics: [
+    'La metafísica pregunta por lo que existe más allá de lo físico y perceptible. Es la rama de la filosofía que interroga la naturaleza fundamental de la realidad, el ser, el tiempo y la causalidad.',
+    'Tales propuso que el principio fundamental de todo lo existente es el agua; lo importante no fue la respuesta sino el método: buscar un principio único y natural que explique la diversidad del mundo. Esta búsqueda inauguró la metafísica occidental.',
+    'Parménides afirmó que el cambio es una ilusión y que solo el Ser existe, eterno e inmóvil. Lo que no es, no puede ser pensado ni expresado: esta tesis obligó a todos los filósofos posteriores a tomar posición frente a ella.',
+    'Para Heráclito todo fluye, nada permanece; el fuego es su símbolo, siempre cambiante pero con una identidad constante. Su concepto del logos propone que bajo el caos aparente existe una razón oculta que ordena todo.',
+    'Platón postuló que la realidad verdadera no está en el mundo sensible sino en el mundo de las Ideas: entidades perfectas, eternas e inmateriales. Lo que vemos son sombras de esas formas perfectas, como en la alegoría de la caverna.',
+    'Aristóteles rechazó el mundo separado de Platón: la realidad está en las cosas individuales concretas, en la sustancia. Cada cosa es una combinación de materia y forma, y el cambio es real, no ilusorio.',
+    'Con "Pienso, luego existo" Descartes encontró la certeza indudable que buscaba y desde ahí reconstruyó todo el edificio del conocimiento. Su dualismo mente-cuerpo sigue siendo uno de los problemas más debatidos en la filosofía actual.',
+    'Spinoza propuso que solo existe una sustancia: Dios o la Naturaleza, dos nombres para lo mismo. Todo lo que existe, pensamiento y materia, son modos de esa sustancia única, un panteísmo radical que fue considerado herético en su época.',
+    'Para Leibniz la realidad está compuesta por mónadas: sustancias simples, indivisibles y sin ventanas al exterior; cada mónada refleja el universo entero desde su propia perspectiva. La armonía entre ellas es preestablecida por Dios.',
+    'Kant trazó un límite entre lo que podemos conocer y lo que existe más allá de nuestra experiencia: el noúmeno, la cosa en sí, es incognoscible. Solo tenemos acceso al fenómeno, al mundo tal como lo estructura nuestra mente.',
+    'Para Hegel la realidad es un proceso dinámico: el Espíritu Absoluto que se despliega en la historia a través de contradicciones. Tesis, antítesis, síntesis: la dialéctica hegeliana propone que la realidad avanza superando sus propias oposiciones.',
+    'La metafísica recorre el arco desde los primeros griegos hasta la modernidad, preguntando siempre lo mismo: ¿qué hay?, ¿qué es real? Las respuestas cambian pero la pregunta permanece, y en esa permanencia reside su profundidad.',
+  ],
+  epistemology: [
+    'La epistemología es la filosofía del conocimiento: ¿podemos conocer el mundo tal como es, o solo tal como nos parece? ¿Cuáles son los límites de lo que podemos saber? Estas preguntas son el corazón de este ciclo.',
+    'La definición clásica del conocimiento lo describe como una creencia verdadera y justificada, pero Edmund Gettier demostró que esta definición tiene fisuras sorprendentes. Conocer es más complejo de lo que parece, y esa complejidad nos abre a la filosofía.',
+    'En el Menón y el Teeteto, Platón exploró si el conocimiento puede enseñarse o si el alma ya lo posee todo. Su teoría de la anamnesis sugiere que aprender es recordar verdades que el alma conocía antes de nacer.',
+    'Aristóteles propuso que el conocimiento se origina en la experiencia sensorial, y que la mente extrae conceptos universales de los casos particulares. No hay ideas innatas: todo comienza con la percepción del mundo concreto.',
+    'Descartes aplicó la duda sistemática a todas sus creencias para encontrar qué resiste un escepticismo radical. Solo el hecho de que algo duda, piensa: el método cartesiano inauguró la epistemología moderna.',
+    'John Locke concibió la mente como una tabula rasa, una pizarra en blanco: todo lo que sabemos llega a través de la experiencia. Esta posición empirista abre la gran disputa entre racionalismo y empirismo que define la filosofía moderna.',
+    'Hume llevó el empirismo hasta sus consecuencias más radicales: si todo conocimiento viene de la experiencia, entonces la causalidad y la identidad personal son solo hábitos mentales, no verdades necesarias. Su escepticismo sigue siendo un desafío sin respuesta definitiva.',
+    'Kant intentó reconciliar racionalismo y empirismo: nuestra mente no es pasiva sino que estructura activamente la experiencia mediante categorías como causalidad y tiempo. Conocemos el mundo tal como nuestra mente lo organiza, no tal como es en sí mismo.',
+    'Karl Popper propuso la falsabilidad como criterio de conocimiento científico: una teoría no es científica si no puede ser refutada en principio. La ciencia no prueba verdades; elimina errores, y en eso reside su fortaleza.',
+    'Thomas Kuhn introdujo el concepto de paradigma: un marco de supuestos compartidos que define cómo se hace ciencia en una época. La ciencia no progresa linealmente sino a través de revoluciones que cambian el paradigma por completo.',
+    'Paul Feyerabend fue el anarquista de la epistemología: argumentó que no existe un método científico único y universal. La historia de la ciencia muestra que el progreso frecuentemente requiere violar las reglas establecidas.',
+    'La epistemología nos deja con más preguntas que respuestas, y eso es precisamente su valor. Desde Platón hasta Feyerabend, cada respuesta sobre el conocimiento abre nuevas interrogantes sobre sus propios fundamentos.',
+  ],
+  aesthetics: [
+    'La estética es la filosofía de la experiencia sensorial y artística: ¿qué hace que algo sea bello, y es esa belleza objetiva o subjetiva? ¿Cuál es el propósito del arte en la vida humana? Estas preguntas no tienen respuesta única, y esa es su riqueza.',
+    'Para Platón la belleza era una Idea perfecta que las cosas bellas del mundo apenas reflejan imperfectamente, y el arte, al imitar lo ya imperfecto, nos aleja dos veces de la verdad. Por eso los poetas no tenían lugar en su ciudad ideal.',
+    'Aristóteles rehabilitó el arte que Platón había condenado: la mímesis tiene valor propio y la tragedia produce catarsis, purificando las emociones del espectador. El arte no engaña sino que revela algo verdadero sobre la condición humana.',
+    'Para Hume el gusto estético es subjetivo pero no arbitrario: existen personas con mejor capacidad de apreciar la belleza, más sensibles, más experimentadas e imparciales. El estándar del gusto emerge del consenso de estos jueces ideales.',
+    'Kant distinguió entre lo bello, que agrada sin concepto, y lo sublime, que nos enfrenta con algo que desborda nuestra imaginación. En ese desbordamiento ante una tormenta o una montaña descubrimos algo sobre nuestra propia razón.',
+    'Schopenhauer vio en el arte la única liberación posible del sufrimiento: la contemplación estética nos arranca momentáneamente del deseo que nos esclaviza. La música es la más alta de las artes porque expresa la voluntad misma, sin mediación de conceptos.',
+    'Para Tolstoi el arte verdadero transmite sentimientos de manera que infecta al espectador con la emoción del artista, uniendo a la humanidad en una experiencia compartida. El arte que no logra esto es mera diversión para élites desconectadas del pueblo.',
+    'Nietzsche vio en el arte la respuesta al nihilismo: el arte justifica la existencia haciéndola bella aunque sea trágica. La tensión entre lo apolíneo, el orden y la forma, y lo dionisiaco, el caos y el éxtasis, define toda gran creación.',
+    'Yuriko Saito desarrolló la estética de lo cotidiano: la belleza no está solo en los museos sino en un jardín bien cuidado, en una comida preparada con cuidado, en el diseño de un objeto funcional. La vida entera puede ser una experiencia estética.',
+    'La estética revela que la pregunta por la belleza es inseparable de la pregunta por el sentido. Desde Platón hasta Saito, el arte y la belleza han sido formas de conocimiento que la razón pura no puede reemplazar.',
+    'El arte contemporáneo desafía todas las categorías estéticas estudiadas: ¿es arte un urinario firmado por Duchamp?, ¿importa la intención del artista? La estética del siglo XX amplió radicalmente los límites de lo que puede llamarse arte.',
+    'La belleza en la era digital plantea preguntas nuevas: los algoritmos generan imágenes, la IA compone música. ¿Puede haber arte sin intención, sin sufrimiento, sin un yo que exprese algo? Las preguntas estéticas adquieren urgencia en el mundo tecnológico.',
+  ],
+  ethics: [
+    'Epicuro propuso que el bien supremo es la ataraxia, la tranquilidad del alma libre de miedos; el placer que buscaba no era el hedonismo vulgar sino la ausencia de dolor y perturbación. Vivir bien es vivir con amigos, filosofía y sencillez.',
+    'Tomás de Aquino integró la ética aristotélica con la teología cristiana: la ley natural, grabada por Dios en la razón humana, nos permite conocer el bien sin necesidad de revelación directa. El bien es lo que perfecciona nuestra naturaleza como seres racionales.',
+    'Hume argumentó que la moral no se funda en la razón sino en el sentimiento: la razón puede decirnos cómo lograr un fin pero no puede por sí sola decirnos qué fines perseguir. Es el sentimiento moral, no el cálculo, lo que nos mueve a actuar bien.',
+    'Kant construyó la ética más influyente de la modernidad: el imperativo categórico exige actuar solo según aquella máxima por la que puedas querer que sea ley universal. La moral no depende de las consecuencias sino del respeto incondicional al deber.',
+    'Marx desplazó la ética del individuo a las estructuras sociales: la explotación no es un pecado personal sino una consecuencia del sistema capitalista. La emancipación humana requiere transformar las condiciones materiales de existencia, no solo las ideas.',
+    'Nietzsche declaró que los valores morales tradicionales son una "moral de esclavos", el resentimiento de los débiles convertido en norma. Propuso una transvaloración de todos los valores: una ética que afirme la vida en lugar de negarla.',
+    'Ayn Rand desarrolló el objetivismo, una ética del egoísmo racional: el bien supremo es la vida del individuo productivo que usa su razón, y el altruismo es una trampa moral. El interés propio consciente y racional es la base de una sociedad libre.',
+    'De Beauvoir aplicó el existencialismo a la ética feminista: no se nace mujer, se llega a serlo, pues la condición femenina es una construcción social que limita la libertad. La ética auténtica requiere asumir la propia libertad y reconocer la del otro.',
+    'Parfit exploró las paradojas de la identidad personal y sus consecuencias éticas: ¿en qué medida somos la misma persona a lo largo del tiempo? Sus respuestas desafían nuestras intuiciones sobre la responsabilidad personal y las obligaciones hacia generaciones futuras.',
+    'Singer aplica el utilitarismo de las preferencias a problemas concretos: si podemos salvar vidas a bajo costo personal, tenemos obligación moral de hacerlo. Su ética demanda mucho más de cada uno de nosotros de lo que solemos admitir.',
+    'La ética no resuelve sus preguntas sino que las profundiza: desde Epicuro hasta Singer, cada sistema moral revela tanto sobre quiénes somos como sobre quiénes queremos ser. La filosofía moral es, en última instancia, la pregunta por cómo vivir.',
+    'Las éticas del cuidado proponen una alternativa a los grandes sistemas morales abstractos: en lugar de principios universales, se centran en las relaciones concretas de dependencia y cuidado mutuo. Carol Gilligan y Nel Noddings desarrollaron esta perspectiva en diálogo crítico con la tradición kantiana.',
+  ],
+};
+
+const PROSPECTUS = {
+  history:    'https://drive.google.com/file/d/1ZTzy-nGyn2h6DbGwmrYS0gvgKWKurDUq/view',
+  ethics:     'https://drive.google.com/file/d/1TBrdIg7JR9nE4beDTW6u1T4m_TlJhD4C/view?usp=sharing',
+  aesthetics: 'https://drive.google.com/file/d/1YfKgnFgM1tYD5o7SWgBzogQUxaNw1rSK/view?usp=sharing',
+};
+
+const CLOCKWISE    = ['history','ethics','aesthetics','epistemology','metaphysics'];
+
+const VIZ_PING_NOTES = {
+  history:     [261.6, 523.3],   // C4, C5  — octavas, nunca disonan
+  metaphysics: [392.0, 784.0],   // G4, G5
+  epistemology:[659.3, 329.6],   // E5, E4
+  aesthetics:  [523.3, 1046.5],  // C5, C6
+  ethics:      [587.3, 1174.7],  // D5, D6
+};
+const GLOW_FILTER  = {
+  history:     'drop-shadow(0 0 8px rgba(85,119,238,0.45))',
+  ethics:      'drop-shadow(0 0 8px rgba(238,68,68,0.45))',
+  aesthetics:  'drop-shadow(0 0 8px rgba(68,221,68,0.45))',
+  epistemology:'drop-shadow(0 0 8px rgba(238,187,34,0.45))',
+  metaphysics: 'drop-shadow(0 0 8px rgba(170,85,238,0.45))',
+};
+const GREY_FILL   = '#1c2736';
+const GREY_STROKE = '#2c3d50';
+const GREY_ARC    = '#182230';
+const GREY_ICON   = 'rgba(90,110,130,0.18)';
+
+// ── SANITY FETCH LAYER ────────────────────────────────────────────────────────
+// Cuando tengamos el projectId de Sanity, reemplazar SANITY_PROJECT_ID y
+// poner SANITY_ENABLED = true. El site carga datos del CMS y cae al fallback
+// hardcodeado si Sanity no responde.
+const SANITY_ENABLED    = false;
+const SANITY_PROJECT_ID = 'REEMPLAZAR';
+const SANITY_DATASET    = 'production';
+const SANITY_API_VER    = '2024-01-01';
+
+async function fetchFromSanity() {
+  const query = encodeURIComponent(`*[_type == "cycle"] | order(order asc) {
+    "key": key.current, label, color, glow, hubCx, hubCy, prospectusUrl, buyUrl,
+    "lessons": nodes[]->{ title, description, order, isExtra } | order(order asc)
+  }`);
+  const url = `https://${SANITY_PROJECT_ID}.api.sanity.io/v${SANITY_API_VER}/data/query/${SANITY_DATASET}?query=${query}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Sanity ${res.status}`);
+  const { result } = await res.json();
+  // Mapear al formato interno
+  result.forEach(c => {
+    const cycle = CYCLES.find(x => x.key === c.key);
+    if (!cycle) return;
+    if (c.label)        cycle.label      = c.label;
+    if (c.buyUrl)       cycle.buyUrl     = c.buyUrl;
+    if (c.prospectusUrl) PROSPECTUS[c.key] = c.prospectusUrl;
+    if (c.lessons?.length) {
+      cycle.lessons      = c.lessons.map(n => n.title);
+      DESCS[c.key]       = c.lessons.map(n => n.description || '');
+    }
+  });
+}
+
+if (SANITY_ENABLED) {
+  fetchFromSanity().catch(err => console.warn('Sanity no disponible, usando datos locales:', err));
+}
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let centerHubData  = null;
+let clusterGroupMap = {};
+const clusterLit   = new Set();
+let selectedNode   = null; // { ng, cycle, idx }
+let selectedHub    = null; // cycle when hub panel is open
+const visited      = new Set(JSON.parse(localStorage.getItem('mindshop-visited') || '[]'));
+let soundMuted     = false;
+let audioCtx       = null;
+let visualizerActive = false;
+let visualizerTimer       = null;
+let visualizerChimeTimers = [];
+// Tres voces independientes con pools y tempos distintos — estilo Eno
+const VIZ_VOICES = [
+  { pool: [261.6, 392.0, 523.3],  min: 7200, max: 13500, last: -1 },
+  { pool: [587.3, 880.0, 1046.5], min: 5400, max: 10800, last: -1 },
+  { pool: [784.0, 1174.7, 659.3], min: 9500, max: 18000, last: -1 },
+];
+let visualizerStep   = 0;
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+
+function getSortedNodes(group) {
+  const CX = 540, CY = 540.15;
+  return [...group.querySelectorAll('g')].filter(g => {
+    const c = g.querySelector('circle');
+    return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5;
+  }).sort((a, b) => {
+    const dc = ng => {
+      const c = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+      return c ? Math.hypot(parseFloat(c.getAttribute('cx')) - CX, parseFloat(c.getAttribute('cy')) - CY) : Infinity;
+    };
+    return dc(a) - dc(b);
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+
 async function init() {
-  const [svgText] = await Promise.all([
-    fetch('./sphere-grid.svg').then(r => r.text())
-  ]);
-
-  const parser = new DOMParser();
-  const svgEl = parser.parseFromString(svgText, 'image/svg+xml').querySelector('svg');
+  const svgText = await fetch('./sphere-grid.svg').then(r => r.text());
+  const parser  = new DOMParser();
+  const svgEl   = parser.parseFromString(svgText, 'image/svg+xml').querySelector('svg');
   svgEl.id = 'sphere-grid';
-  svgEl.removeAttribute('width');
-  svgEl.removeAttribute('height');
-
-  // Clean up SVG default style — remove fill/stroke defaults so CSS overrides cleanly
-  const styleEl = svgEl.querySelector('style');
-  if (styleEl) {
-    // Keep class definitions but neutralize colors we'll override
-    styleEl.textContent = styleEl.textContent
-      .replace(/stroke:\s*#fff[^;]*/g, 'stroke: currentColor')
-      .replace(/fill:\s*#fff[^;]*/g, 'fill: white')
-      .replace(/fill:\s*#00c1ca[^;]*/g, 'fill: #00c1ca')
-      .replace(/stroke:\s*#00c1ca[^;]*/g, 'stroke: #00c1ca');
-  }
+  svgEl.removeAttribute('width'); svgEl.removeAttribute('height');
 
   const rootG = svgEl.querySelector(':scope > g');
 
-  // ── Center circle: style hub, store coords for portrait (added after mount) ──
-  const centerHub = [...svgEl.querySelectorAll('circle')]
-    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 50) < 1);
-  let centerHubData = null;
-  if (centerHub) {
-    const cx = parseFloat(centerHub.getAttribute('cx'));
-    const cy = parseFloat(centerHub.getAttribute('cy'));
-    const r  = 48;
-    centerHubData = { cx, cy, r };
-
-    // Style hub as dark ring (portrait will overlay after mount)
-    centerHub.style.fill   = '#0a1520';
-    centerHub.style.stroke = 'rgba(255,255,255,0.25)';
-    centerHub.style.strokeWidth = '2';
-
-    // Outer glow ring (use DOM API to avoid innerHTML issues)
-    const ring = document.createElementNS(NS, 'circle');
-    ring.setAttribute('cx', String(cx)); ring.setAttribute('cy', String(cy));
-    ring.setAttribute('r', String(r + 4));
-    ring.setAttribute('fill', 'none');
-    ring.setAttribute('stroke', 'rgba(255,255,255,0.15)');
-    ring.setAttribute('stroke-width', '1.5');
-    rootG.appendChild(ring);
-  }
-
-  // ── Style root-level center spokes (not inside any cluster group) ──────
   [...rootG.children].forEach(el => {
     if (el.tagName === 'line') {
-      el.style.stroke = 'rgba(255,255,255,0.12)';
+      el.style.stroke = '#00C1CA'; el.style.strokeOpacity = '0.45';
     }
   });
 
-  // ── Style clusters ─────────────────────────────────────────────────────
-  const clusterGroups = [...rootG.children].filter(el => el.tagName === 'g');
+  const centerHubEl = [...svgEl.querySelectorAll('circle')]
+    .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 50) < 1);
+  if (centerHubEl) {
+    centerHubData = { cx: parseFloat(centerHubEl.getAttribute('cx')), cy: parseFloat(centerHubEl.getAttribute('cy')), r: 48 };
+    centerHubEl.style.fill = '#0a1520';
+    centerHubEl.style.stroke = 'rgba(0,193,202,0.6)';
+    centerHubEl.style.strokeWidth = '2.5';
+  }
 
+  const clusterGroups = [...rootG.children].filter(el => el.tagName === 'g');
   CYCLES.forEach(cycle => {
     const group = clusterGroups.find(g =>
       [...g.querySelectorAll('circle')].some(c =>
         Math.abs(parseFloat(c.getAttribute('cx')) - cycle.hubCx) < 2 &&
         Math.abs(parseFloat(c.getAttribute('cy')) - cycle.hubCy) < 2 &&
-        Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1
+        Math.abs(parseFloat(c.getAttribute('r'))  - 30.93)       < 1
       )
     );
     if (!group) return;
-
     group.setAttribute('data-cycle', cycle.key);
-    group.setAttribute('data-label', cycle.label);
-
-    styleCluster(group, cycle);
-    addLabel(rootG, cycle);
+    clusterGroupMap[cycle.key] = group;
+    styleClusterGrey(group, cycle);
   });
 
-  // ── Style all remaining cls-13 (cyan) elements not already styled ─────
+  [...rootG.children].filter(el => el.tagName === 'g' && !el.getAttribute('data-cycle'))
+    .forEach(g => {
+      g.querySelectorAll('circle').forEach(c => {
+        c.style.fill = '#1a2a3a'; c.style.stroke = 'rgba(104,128,168,0.55)'; c.style.strokeWidth = '1.5';
+      });
+      g.querySelectorAll('.cls-8,.cls-12').forEach(el => {
+        if (el.tagName !== 'circle') el.style.fill = 'rgba(150,170,200,0.7)';
+      });
+    });
+
   svgEl.querySelectorAll('.cls-13').forEach(el => {
     if (!el.style.fill) {
-      el.style.fill = '#0a1520';
-      el.style.stroke = 'rgba(255,255,255,0.12)';
-      el.style.strokeWidth = '1';
+      el.style.fill = '#0d1b2a'; el.style.stroke = 'rgba(0,193,202,0.18)'; el.style.strokeWidth = '1';
     }
   });
 
-  // ── Style center "M" brand text ────────────────────────────────────────
   const centerText = [...rootG.querySelectorAll('text')].find(t => t.textContent.trim() === 'M');
-  if (centerText) {
-    centerText.style.fill = 'rgba(255,255,255,0.25)';
-    centerText.style.fontFamily = "'Montserrat', sans-serif";
-    centerText.setAttribute('font-weight', '200');
-    centerText.setAttribute('letter-spacing', '4');
-  }
+  if (centerText) centerText.style.display = 'none';
 
-  // ── Mount SVG ──────────────────────────────────────────────────────────
+  svgEl.querySelectorAll('.cls-6,.cls-7').forEach(el => {
+    const target = el.closest('[data-cycle]') || rootG;
+    target.insertBefore(el, target.firstChild);
+  });
+  [...rootG.children].filter(el => el.tagName === 'line')
+    .forEach(l => rootG.insertBefore(l, rootG.firstChild));
+
   document.getElementById('canvas').appendChild(svgEl);
-
-  // ── Portrait via foreignObject (must be after SVG is in main DOM) ──────
-  if (centerHubData) {
-    const { cx, cy, r } = centerHubData;
-    const mountedSvg  = document.getElementById('sphere-grid');
-    const mountedRoot = mountedSvg.querySelector(':scope > g');
-
-    // clipPath via DOM API (safe, doesn't touch existing style element)
-    const mountedDefs = mountedSvg.querySelector('defs');
-    const clipPath = document.createElementNS(NS, 'clipPath');
-    clipPath.setAttribute('id', 'center-portrait-clip');
-    const clipCircle = document.createElementNS(NS, 'circle');
-    clipCircle.setAttribute('cx', String(cx));
-    clipCircle.setAttribute('cy', String(cy));
-    clipCircle.setAttribute('r',  String(r));
-    clipPath.appendChild(clipCircle);
-    mountedDefs.appendChild(clipPath);
-
-    const fo = document.createElementNS(NS, 'foreignObject');
-    fo.setAttribute('x', String(cx - r));
-    fo.setAttribute('y', String(cy - r));
-    fo.setAttribute('width',  String(r * 2));
-    fo.setAttribute('height', String(r * 2));
-    fo.setAttribute('clip-path', 'url(#center-portrait-clip)');
-
-    const imgWrap = document.createElement('div');
-    imgWrap.style.cssText = `width:${r*2}px;height:${r*2}px;overflow:hidden;border-radius:50%;`;
-
-    const portraitImg = document.createElement('img');
-    portraitImg.src = './nietzsche.jpg';
-    portraitImg.style.cssText = `width:100%;height:100%;object-fit:cover;filter:grayscale(1) brightness(0.7);display:block;`;
-    imgWrap.appendChild(portraitImg);
-    fo.appendChild(imgWrap);
-    mountedRoot.appendChild(fo);
-  }
-
+  updatePortrait();
   setupTooltips(svgEl);
+  setupNodeInteraction(svgEl);
+  setupLegendHighlight();
+  setupPanel();
+  setupControls();
+
+  document.getElementById('splash-mute').addEventListener('click', () => {
+    soundMuted = !soundMuted;
+    const btn = document.getElementById('splash-mute');
+    btn.classList.toggle('muted', soundMuted);
+    btn.title = soundMuted ? 'Sin sonido' : 'Sonido al iniciar';
+    document.getElementById('muteBtn').classList.toggle('muted', soundMuted);
+  });
+
+  document.getElementById('splash-btn').addEventListener('click', () => {
+    initAudio();
+    document.getElementById('fog').classList.add('cleared');
+    setTimeout(() => runLoadAnimation(svgEl), 300);
+  }, { once: true });
 }
 
-// ── STYLE CLUSTER ─────────────────────────────────────────────────────────
-function styleCluster(group, cycle) {
-  const locked = !cycle.available;
+// ── STYLING ───────────────────────────────────────────────────────────────────
 
-  // Lines & arcs
-  group.querySelectorAll('.cls-6, .cls-7').forEach(el => {
-    el.style.stroke = locked ? '#1e2d3d' : cycle.color;
-    el.style.strokeOpacity = locked ? '0.4' : '0.75';
+function styleClusterGrey(group, cycle) {
+  group.querySelectorAll('.cls-6,.cls-7').forEach(el => {
+    el.style.stroke = GREY_ARC; el.style.strokeOpacity = '0.5';
+    el.style.transition = 'stroke 0.5s ease-out';
   });
 
-  // Icon paths (white icons on colored circles)
-  group.querySelectorAll('.cls-12, .cls-8').forEach(el => {
-    el.style.fill = locked ? '#374151' : '#ffffff';
-    el.style.opacity = locked ? '0.35' : '1';
-  });
-
-  // ── Hub circle (large, r=30.93) ──────────────────────────────────────
   const hub = [...group.querySelectorAll('circle')]
     .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
   if (hub) {
-    hub.style.fill   = locked ? '#111827' : cycle.color;
-    hub.style.stroke = locked ? '#1e2d3d' : cycle.glow;
-    hub.style.strokeWidth = '2.5';
+    hub.style.fill = GREY_FILL; hub.style.stroke = GREY_STROKE;
+    hub.style.strokeWidth = '2.5'; hub.style.cursor = 'pointer';
+    hub.style.transition = 'fill 0.6s ease-out, stroke 0.6s ease-out';
+
+    let container = hub;
+    while (container.parentElement && container.parentElement !== group)
+      container = container.parentElement;
+    group.appendChild(container);
+
+    // Inner hub circles (part of the icon) → grey initially
+    [...hub.parentElement.querySelectorAll('circle')].forEach(c => {
+      if (c === hub || c.classList.contains('hub-shine')) return;
+      c.style.fill = GREY_ICON; c.style.transition = 'fill 0.5s ease-out';
+    });
+
+    // Glass shine
+    const svgEl = group.ownerSVGElement;
+    const defs  = svgEl.querySelector('defs');
+    const sid   = `hub-shine-${cycle.key}`;
+    const grad  = document.createElementNS(NS, 'radialGradient');
+    grad.setAttribute('id', sid);
+    grad.setAttribute('cx', '38%'); grad.setAttribute('cy', '32%'); grad.setAttribute('r', '58%');
+    [['0%','rgba(255,255,255,0.40)'],['45%','rgba(255,255,255,0.06)'],['100%','rgba(255,255,255,0)']].forEach(([off,col]) => {
+      const s = document.createElementNS(NS, 'stop');
+      s.setAttribute('offset', off); s.setAttribute('stop-color', col); grad.appendChild(s);
+    });
+    defs.appendChild(grad);
+    const shine = document.createElementNS(NS, 'circle');
+    shine.setAttribute('cx', hub.getAttribute('cx')); shine.setAttribute('cy', hub.getAttribute('cy'));
+    shine.setAttribute('r', hub.getAttribute('r'));   shine.setAttribute('fill', `url(#${sid})`);
+    shine.setAttribute('pointer-events', 'none');     shine.classList.add('hub-shine');
+    shine.style.opacity = '0'; shine.style.transition = 'opacity 0.8s ease-out';
+    hub.parentElement.appendChild(shine);
+
+    hub.parentElement.querySelectorAll('.cls-12,.cls-8').forEach(el => {
+      if (el.tagName !== 'circle') { el.style.fill = GREY_ICON; el.style.transition = 'fill 0.5s ease-out'; }
+    });
   }
 
-  // ── Satellite nodes (r=11.81) ─────────────────────────────────────────
-  const nodeGroups = [...group.querySelectorAll('g')].filter(g => {
-    const c = g.querySelector('circle');
-    return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5;
+  getSortedNodes(group).forEach(ng => {
+    const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+    const inner = ng.querySelector('.cls-9');
+    if (outer) {
+      outer.style.fill = GREY_FILL; outer.style.stroke = GREY_STROKE;
+      outer.style.strokeWidth = '2'; outer.style.cursor = 'pointer';
+      outer.style.transition = 'fill 0.5s ease-out, stroke 0.5s ease-out';
+    }
+    if (inner) { inner.style.stroke = GREY_STROKE; inner.style.transition = 'stroke 0.5s ease-out'; }
+    ng.querySelectorAll('.cls-5').forEach(el => {
+      el.style.fill = GREY_ICON; el.style.stroke = GREY_ICON;
+      el.style.strokeWidth = '1.2'; el.style.strokeLinejoin = 'round'; el.style.strokeLinecap = 'round';
+      el.style.transition = 'fill 0.4s ease-out, stroke 0.4s ease-out';
+    });
+    ng.querySelectorAll('.cls-12,.cls-8').forEach(el => {
+      if (el.tagName !== 'circle') { el.style.fill = GREY_ICON; el.style.transition = 'fill 0.4s ease-out'; }
+    });
   });
 
-  const progress = cycle.progress || { completed: [], available: [], locked: [] };
+  group.style.filter = 'none'; group.style.transition = 'filter 0.9s ease-out';
+}
 
-  nodeGroups.forEach((ng, idx) => {
-    const outerCircle = [...ng.querySelectorAll('circle')]
-      .find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
-    const innerCircle = ng.querySelector('.cls-9'); // connector arrow node
-    const isConnector  = !!innerCircle;
+// ── LIGHT-UP ──────────────────────────────────────────────────────────────────
 
-    // Connector nodes: always show as available in cluster color
-    if (isConnector) {
-      if (outerCircle) {
-        outerCircle.style.fill   = locked ? '#111827' : cycle.colorDark;
-        outerCircle.style.stroke = locked ? '#2d3748' : cycle.glow;
-        outerCircle.style.strokeWidth = '2';
-      }
-      if (innerCircle) {
-        innerCircle.style.stroke = locked ? '#374151' : cycle.color;
-      }
-      // Arrow icon paths
-      ng.querySelectorAll('.cls-5').forEach(el => {
-        el.style.fill = locked ? '#374151' : cycle.glow;
-      });
-      return;
-    }
+function lightUpNode(ng, cycle) {
+  const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+  const inner = ng.querySelector('.cls-9');
+  if (outer) { outer.style.fill = cycle.color; outer.style.stroke = cycle.glow; }
+  if (inner) inner.style.stroke = cycle.glow;
+  ng.querySelectorAll('.cls-5').forEach(el => { el.style.fill = '#ffffff'; el.style.stroke = '#ffffff'; });
+  ng.querySelectorAll('.cls-12,.cls-8').forEach(el => { if (el.tagName !== 'circle') el.style.fill = '#ffffff'; });
+}
 
-    if (locked) {
-      if (outerCircle) {
-        outerCircle.style.fill   = '#0d1520';
-        outerCircle.style.stroke = '#1e2d3d';
-      }
-      ng.querySelectorAll('.cls-12, .cls-8, .cls-5').forEach(el => {
-        el.style.fill = '#2d3748'; el.style.opacity = '0.35';
-      });
-      return;
-    }
+function lightUpClusterHub(group, cycle) {
+  group.querySelectorAll('.cls-6,.cls-7').forEach(el => { el.style.stroke = '#00C1CA'; el.style.strokeOpacity = '0.7'; });
 
-    const state = progress.completed.includes(idx) ? 'completed'
-                : progress.available.includes(idx) ? 'available'
-                : 'locked';
+  const hub = [...group.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
+  if (hub) {
+    hub.style.fill = cycle.color; hub.style.stroke = cycle.glow;
+    // Inner hub circles → white (they're part of the icon, not the sphere grid)
+    [...hub.parentElement.querySelectorAll('circle')].forEach(c => {
+      if (c === hub || c.classList.contains('hub-shine')) return;
+      c.style.fill = '#ffffff';
+    });
+    const shine = hub.parentElement.querySelector('.hub-shine');
+    if (shine) shine.style.opacity = '1';
+    hub.parentElement.querySelectorAll('.cls-12,.cls-8').forEach(el => {
+      if (el.tagName !== 'circle') el.style.fill = '#ffffff';
+    });
+  }
 
-    if (state === 'completed') {
-      if (outerCircle) {
-        outerCircle.style.fill   = cycle.color;
-        outerCircle.style.stroke = cycle.glow;
-        outerCircle.style.strokeWidth = '2';
-      }
-      ng.querySelectorAll('.cls-12, .cls-8').forEach(el => el.style.fill = '#fff');
-      ng.style.filter = `drop-shadow(0 0 6px ${cycle.glow})`;
+  group.style.filter = GLOW_FILTER[cycle.key];
+  clusterLit.add(cycle.key);
 
-    } else if (state === 'available') {
-      if (outerCircle) {
-        outerCircle.style.fill   = cycle.colorDark;
-        outerCircle.style.stroke = cycle.glow;
-        outerCircle.style.strokeWidth = '2.5';
-      }
-      ng.querySelectorAll('.cls-12, .cls-8').forEach(el => {
-        el.style.fill = 'rgba(255,255,255,0.75)';
-      });
+  if (clusterLit.size === CYCLES.length) {
+    setTimeout(() => {
+      CYCLES.forEach(c => { const g = clusterGroupMap[c.key]; if (g) g.style.transition = 'filter 0.22s ease-out'; });
+      applyVisitedStyles();
+    }, 900);
+  }
+}
 
-      // Pulse ring — SVG animate is reliable across browsers (CSS r-animation isn't)
-      const prCx = outerCircle.getAttribute('cx');
-      const prCy = outerCircle.getAttribute('cy');
-      const pr = document.createElementNS(NS, 'circle');
-      pr.setAttribute('cx', prCx); pr.setAttribute('cy', prCy); pr.setAttribute('r', '11.81');
-      pr.setAttribute('fill', 'none');
-      pr.setAttribute('stroke', cycle.glow);
-      pr.setAttribute('stroke-width', '1.5');
-      pr.setAttribute('stroke-opacity', '0.8');
+// ── LOAD ANIMATION ────────────────────────────────────────────────────────────
 
-      const animR = document.createElementNS(NS, 'animate');
-      animR.setAttribute('attributeName', 'r');
-      animR.setAttribute('values', '11.81;22;22');
-      animR.setAttribute('keyTimes', '0;0.75;1');
-      animR.setAttribute('dur', '2.4s');
-      animR.setAttribute('repeatCount', 'indefinite');
-      pr.appendChild(animR);
-
-      const animOp = document.createElementNS(NS, 'animate');
-      animOp.setAttribute('attributeName', 'stroke-opacity');
-      animOp.setAttribute('values', '0.8;0;0');
-      animOp.setAttribute('keyTimes', '0;0.75;1');
-      animOp.setAttribute('dur', '2.4s');
-      animOp.setAttribute('repeatCount', 'indefinite');
-      pr.appendChild(animOp);
-
-      ng.insertBefore(pr, ng.firstChild);
-      ng.style.filter = `drop-shadow(0 0 3px ${cycle.color})`;
-
-    } else {
-      // locked node within available cluster
-      if (outerCircle) {
-        outerCircle.style.fill   = '#0d1520';
-        outerCircle.style.stroke = cycle.color + '28';
-        outerCircle.style.strokeWidth = '1.5';
-      }
-      ng.querySelectorAll('.cls-12, .cls-8').forEach(el => {
-        el.style.fill = '#374151'; el.style.opacity = '0.4';
-      });
-    }
+function runLoadAnimation(svgEl) {
+  playGridArpeggio();
+  const NODE_MS = 68, CLUSTER_MS = 220, START_MS = 450;
+  let clusterStart = START_MS;
+  CLOCKWISE.forEach(key => {
+    const cycle = CYCLES.find(c => c.key === key);
+    const group = svgEl.querySelector(`[data-cycle="${key}"]`);
+    if (!group || !cycle) return;
+    const nodes = getSortedNodes(group);
+    nodes.forEach((ng, i) => setTimeout(() => lightUpNode(ng, cycle), clusterStart + i * NODE_MS));
+    const hubT = clusterStart + nodes.length * NODE_MS + 60;
+    setTimeout(() => lightUpClusterHub(group, cycle), hubT);
+    clusterStart += CLUSTER_MS;
   });
 }
 
-// ── CYCLE LABEL ───────────────────────────────────────────────────────────
-function addLabel(rootG, cycle) {
-  const t = document.createElementNS(NS, 'text');
-  t.setAttribute('x', cycle.labelX);
-  t.setAttribute('y', cycle.labelY);
-  t.setAttribute('text-anchor', 'middle');
-  t.setAttribute('font-family', "'Montserrat', sans-serif");
-  t.setAttribute('font-size', '20');
-  t.setAttribute('font-weight', '300');
-  t.setAttribute('letter-spacing', '5');
-  t.setAttribute('fill', cycle.available ? cycle.glow : 'rgba(255,255,255,0.18)');
-  t.textContent = cycle.label.toUpperCase();
-  rootG.appendChild(t);
-}
+// ── INTERACTIONS ──────────────────────────────────────────────────────────────
 
-// ── TOOLTIPS ──────────────────────────────────────────────────────────────
 function setupTooltips(svgEl) {
   const tooltip = document.getElementById('tooltip');
-
   svgEl.addEventListener('mouseover', e => {
-    const cycleGroup = e.target.closest('[data-cycle]');
-    if (!cycleGroup) { tooltip.classList.remove('visible'); return; }
-
-    const cycle = CYCLES.find(c => c.key === cycleGroup.dataset.cycle);
+    if (selectedNode) return; // panel open — don't show hover tooltip
+    const cg = e.target.closest('[data-cycle]');
+    if (!cg) { tooltip.classList.remove('visible'); return; }
+    const cycle = CYCLES.find(c => c.key === cg.dataset.cycle);
     if (!cycle) return;
 
-    if (!cycle.available) {
-      tooltip.textContent = cycle.label + ' — Próximamente';
-      tooltip.style.borderColor = 'rgba(255,255,255,0.08)';
-      tooltip.classList.add('visible');
-      return;
-    }
-
-    const nodeGroups = [...cycleGroup.querySelectorAll('g')].filter(g => {
+    const nodes = [...cg.querySelectorAll('g')].filter(g => {
       const c = g.querySelector('circle');
       return c && Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5 && !g.querySelector('.cls-9');
     });
-    const ng = e.target.closest('g');
-    const idx = nodeGroups.indexOf(ng);
+    const idx = nodes.indexOf(e.target.closest('g'));
     const lesson = cycle.lessons[idx];
-
-    if (lesson) {
-      tooltip.textContent = lesson;
-      tooltip.style.borderColor = cycle.color + '44';
-      tooltip.classList.add('visible');
-    } else {
-      tooltip.classList.remove('visible');
-    }
+    tooltip.textContent = lesson || cycle.label;
+    tooltip.style.borderColor = cycle.color + '55';
+    tooltip.classList.add('visible');
   });
-
   svgEl.addEventListener('mousemove', e => {
     tooltip.style.left = (e.clientX + 14) + 'px';
     tooltip.style.top  = (e.clientY - 10) + 'px';
@@ -536,48 +966,784 @@ function setupTooltips(svgEl) {
   svgEl.addEventListener('mouseout', () => tooltip.classList.remove('visible'));
 }
 
-// ── PAN / ZOOM ────────────────────────────────────────────────────────────
-const canvas   = document.getElementById('canvas');
-const viewport = document.getElementById('viewport');
-// Start zoomed out so the full 1080px SVG fits nicely in viewport
-let scale = 0.72, tx = 0, ty = 0;
-let dragging = false, startX, startY;
+function setupNodeInteraction(svgEl) {
+  svgEl.addEventListener('click', e => {
+    const cg = e.target.closest('[data-cycle]');
 
-function applyTransform() {
-  canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+    // Click on empty SVG background → deselect
+    if (!cg) { clearSelection(); return; }
+
+    const cycle = CYCLES.find(c => c.key === cg.dataset.cycle);
+    if (!cycle) return;
+
+    // Satellite node click
+    const sortedNodes = getSortedNodes(cg);
+    const ng = sortedNodes.find(n => n.contains(e.target));
+
+    if (!ng) {
+      // Hub click (circle, orbit ring, or hub icon) → zoom + hub panel
+      const ts = 1.8;
+      animateTo(-(cycle.hubCx - 540) * ts, -(cycle.hubCy - 540.15) * ts, ts);
+      openHubPanel(cycle);
+      triggerFeedback('medium'); return;
+    }
+
+    const idx = sortedNodes.indexOf(ng);
+    const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+    if (!outer) return;
+
+    // Flash
+    outer.classList.remove('node-click-flash');
+    void outer.getBoundingClientRect();
+    outer.classList.add('node-click-flash');
+    outer.addEventListener('animationend', () => outer.classList.remove('node-click-flash'), { once: true });
+
+    // Ripple
+    const rect = outer.getBoundingClientRect();
+    spawnRipple(rect.left + rect.width / 2, rect.top + rect.height / 2, cycle.color);
+
+    // Select / deselect
+    if (selectedNode && selectedNode.ng === ng) {
+      clearSelection();
+    } else {
+      const svgCx = parseFloat(outer.getAttribute('cx'));
+      const svgCy = parseFloat(outer.getAttribute('cy'));
+      selectNodeFn(ng, cycle, idx, svgCx, svgCy);
+    }
+
+    triggerFeedback('light');
+  });
 }
 
+function setupLegendHighlight() {
+  const legendEl = document.getElementById('legend');
+  legendEl.querySelectorAll('.legend-item[data-cycle]').forEach(item => {
+    const key = item.dataset.cycle;
+    item.addEventListener('mouseenter', () => {
+      legendEl.classList.add('highlighting');
+      item.classList.add('hovered');
+      CYCLES.forEach(c => {
+        const g = clusterGroupMap[c.key]; if (!g) return;
+        if (c.key === key) {
+          const base = clusterLit.has(c.key) ? GLOW_FILTER[c.key] : '';
+          g.style.filter = base ? base + ' brightness(1.25)' : 'brightness(1.3)';
+        } else {
+          g.style.filter = 'brightness(0.28) grayscale(0.5)';
+        }
+      });
+    });
+    item.addEventListener('mouseleave', () => {
+      legendEl.classList.remove('highlighting');
+      item.classList.remove('hovered');
+      CYCLES.forEach(c => { const g = clusterGroupMap[c.key]; if (g) g.style.filter = clusterLit.has(c.key) ? GLOW_FILTER[c.key] : 'none'; });
+    });
+    item.addEventListener('click', () => {
+      const cycle = CYCLES.find(c => c.key === key);
+      if (!cycle) return;
+      const ts = 1.8;
+      animateTo(-(cycle.hubCx - 540) * ts, -(cycle.hubCy - 540.15) * ts, ts);
+      openHubPanel(cycle);
+    });
+  });
+}
+
+// ── SELECTION ─────────────────────────────────────────────────────────────────
+
+function selectNodeFn(ng, cycle, idx, svgCx, svgCy) {
+  if (selectedNode) removeSelectionRing(selectedNode.ng);
+  selectedNode = { ng, cycle, idx, svgCx, svgCy };
+  addSelectionRing(ng, cycle);
+  openPanel(cycle, idx);
+  panToNode(svgCx, svgCy);
+}
+
+function clearSelection() {
+  if (selectedNode) { removeSelectionRing(selectedNode.ng); selectedNode = null; }
+  selectedHub = null;
+  closePanel();
+}
+
+function addSelectionRing(ng, cycle) {
+  const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+  if (!outer) return;
+  const ring = document.createElementNS(NS, 'circle');
+  ring.setAttribute('cx', outer.getAttribute('cx')); ring.setAttribute('cy', outer.getAttribute('cy'));
+  ring.setAttribute('r', String(parseFloat(outer.getAttribute('r')) + 5.5));
+  ring.setAttribute('fill', 'none'); ring.setAttribute('stroke', cycle.glow);
+  ring.setAttribute('stroke-width', '1.2'); ring.setAttribute('stroke-dasharray', '3 4');
+  ring.setAttribute('pointer-events', 'none'); ring.classList.add('selection-ring');
+  ring.style.opacity = '0.7';
+  ng.appendChild(ring);
+}
+
+function removeSelectionRing(ng) {
+  ng.querySelectorAll('.selection-ring').forEach(el => el.remove());
+}
+
+function panToNode(svgCx, svgCy) {
+  const isMobile = window.innerWidth < 640;
+  const panelH   = window.innerHeight * 0.62;
+  const targetSx = isMobile ? window.innerWidth / 2 : window.innerWidth / 2 - 155;
+  const targetSy = isMobile ? (window.innerHeight - panelH) * 0.42 : window.innerHeight / 2;
+  const newTx = targetSx - window.innerWidth  / 2 - (svgCx - 540)    * scale;
+  const newTy = targetSy - window.innerHeight / 2 - (svgCy - 540.15) * scale;
+  animateTo(newTx, newTy, scale);
+}
+
+// ── VISITED ───────────────────────────────────────────────────────────────────
+
+function markVisited(key, idx) {
+  const id = `${key}:${idx}`;
+  if (visited.has(id)) return;
+  visited.add(id);
+  localStorage.setItem('mindshop-visited', JSON.stringify([...visited]));
+  // Apply mark visually now if node exists
+  const group = clusterGroupMap[key];
+  if (!group) return;
+  const nodes = getSortedNodes(group);
+  if (nodes[idx]) addVisitedMark(nodes[idx]);
+}
+
+function applyVisitedStyles() {
+  CYCLES.forEach(cycle => {
+    const group = clusterGroupMap[cycle.key]; if (!group) return;
+    const nodes = getSortedNodes(group);
+    nodes.forEach((ng, i) => { if (visited.has(`${cycle.key}:${i}`)) addVisitedMark(ng); });
+  });
+}
+
+function addVisitedMark(ng) {
+  if (ng.querySelector('.visited-mark')) return;
+  const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+  if (!outer) return;
+  const ring = document.createElementNS(NS, 'circle');
+  ring.setAttribute('cx', outer.getAttribute('cx')); ring.setAttribute('cy', outer.getAttribute('cy'));
+  ring.setAttribute('r', String(parseFloat(outer.getAttribute('r')) + 4.5));
+  ring.setAttribute('fill', 'none');
+  ring.setAttribute('stroke', 'rgba(255,255,255,0.32)');
+  ring.setAttribute('stroke-width', '1.3');
+  ring.setAttribute('pointer-events', 'none'); ring.classList.add('visited-mark');
+  ng.appendChild(ring);
+}
+
+function removeVisitedMark(ng) {
+  ng.querySelectorAll('.visited-mark').forEach(el => el.remove());
+}
+
+function toggleVisitedFn() {
+  if (!selectedNode) return;
+  const { cycle, idx } = selectedNode;
+  const id = `${cycle.key}:${idx}`;
+  if (visited.has(id)) {
+    visited.delete(id);
+    localStorage.setItem('mindshop-visited', JSON.stringify([...visited]));
+    removeVisitedMark(selectedNode.ng);
+  } else {
+    markVisited(cycle.key, idx);
+  }
+  syncPanelVisitedUI(id);
+}
+
+function syncPanelVisitedUI(id) {
+  const isVisited = visited.has(id);
+  document.getElementById('panel-visited-badge').classList.toggle('show', isVisited);
+  const btn = document.getElementById('panel-toggle-visited');
+  if (btn) btn.textContent = isVisited ? 'Desmarcar lección' : 'Marcar como visitada';
+}
+
+// ── PANEL ─────────────────────────────────────────────────────────────────────
+
+function setupPanel() {
+  document.getElementById('panel-close').addEventListener('click', clearSelection);
+  document.getElementById('panel-backdrop').addEventListener('click', clearSelection);
+  document.getElementById('panel-toggle-visited').addEventListener('click', toggleVisitedFn);
+
+  document.getElementById('panel-prev').addEventListener('click', () => {
+    if (!selectedNode) return;
+    const { cycle, idx } = selectedNode;
+    if (idx <= 0) return;
+    const nodes = getSortedNodes(clusterGroupMap[cycle.key]);
+    const ng = nodes[idx - 1];
+    if (!ng) return;
+    const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+    if (!outer) return;
+    selectNodeFn(ng, cycle, idx - 1, parseFloat(outer.getAttribute('cx')), parseFloat(outer.getAttribute('cy')));
+  });
+
+  document.getElementById('panel-next').addEventListener('click', () => {
+    if (!selectedNode) return;
+    const { cycle, idx } = selectedNode;
+    if (idx >= cycle.lessons.length - 1) return;
+    const nodes = getSortedNodes(clusterGroupMap[cycle.key]);
+    const ng = nodes[idx + 1];
+    if (!ng) return;
+    const outer = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+    if (!outer) return;
+    selectNodeFn(ng, cycle, idx + 1, parseFloat(outer.getAttribute('cx')), parseFloat(outer.getAttribute('cy')));
+  });
+
+  // Mobile swipe-to-dismiss from handle area
+  const panel = document.getElementById('panel');
+  let dragStart = null, dragCur = 0;
+  panel.addEventListener('touchstart', e => {
+    const ty = e.touches[0].clientY;
+    const pr = panel.getBoundingClientRect();
+    if (ty - pr.top < 44) { dragStart = ty; dragCur = 0; }
+  }, { passive: true });
+  panel.addEventListener('touchmove', e => {
+    if (dragStart === null) return;
+    dragCur = Math.max(0, e.touches[0].clientY - dragStart);
+    panel.style.transform = `translateY(${dragCur}px)`;
+  }, { passive: true });
+  panel.addEventListener('touchend', () => {
+    if (dragStart === null) return;
+    panel.style.transform = '';
+    if (dragCur > 90) clearSelection();
+    dragStart = null; dragCur = 0;
+  }, { passive: true });
+}
+
+function openPanel(cycle, idx) {
+  const desc    = (DESCS[cycle.key] || [])[idx] || '';
+  const lesson  = cycle.lessons[idx] || '';
+  const id      = `${cycle.key}:${idx}`;
+
+  document.getElementById('panel-cycle-dot').style.background = cycle.color;
+  document.getElementById('panel-cycle-name').textContent     = cycle.label;
+  document.getElementById('panel-lesson-num').textContent     = `Lección ${idx + 1} de ${cycle.lessons.length}`;
+  document.getElementById('panel-lesson-title').textContent   = lesson;
+  document.getElementById('panel-lesson-desc').textContent    = desc;
+  syncPanelVisitedUI(id);
+  updateProspectus(cycle.key);
+
+  const prevBtn = document.getElementById('panel-prev');
+  const nextBtn = document.getElementById('panel-next');
+  prevBtn.disabled = idx <= 0;
+  nextBtn.disabled = idx >= cycle.lessons.length - 1;
+
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('panel-backdrop').classList.add('show');
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open', 'hub-panel');
+  document.getElementById('panel-backdrop').classList.remove('show');
+}
+
+function openHubPanel(cycle) {
+  if (selectedNode) { removeSelectionRing(selectedNode.ng); selectedNode = null; }
+  selectedHub = cycle;
+  const progress = cycle.lessons.filter((_, i) => visited.has(`${cycle.key}:${i}`)).length;
+  document.getElementById('panel-cycle-dot').style.background  = cycle.color;
+  document.getElementById('panel-cycle-name').textContent      = cycle.label;
+  document.getElementById('panel-lesson-num').textContent      = `${progress} / ${cycle.lessons.length} lecciones visitadas`;
+  document.getElementById('panel-lesson-title').textContent    = cycle.label;
+  document.getElementById('panel-lesson-desc').textContent     = (DESCS[cycle.key] || [])[0] || '';
+  document.getElementById('panel-visited-badge').classList.remove('show');
+  updateProspectus(cycle.key);
+  updateBuyButton(cycle);
+  document.getElementById('panel').classList.add('open', 'hub-panel');
+  document.getElementById('panel-backdrop').classList.add('show');
+}
+
+function updateProspectus(cycleKey) {
+  const el  = document.getElementById('panel-prospectus');
+  const url = PROSPECTUS[cycleKey];
+  if (url) {
+    el.innerHTML = `<a href="${url}" target="_blank" rel="noopener" id="panel-prospectus-btn">Ver prospectus</a>`;
+  } else {
+    el.innerHTML = `<span id="panel-prospectus-soon">Próximamente</span>`;
+  }
+}
+
+function updateBuyButton(cycle) {
+  const el = document.getElementById('panel-buy');
+  if (cycle.buyUrl) {
+    el.innerHTML = `<a href="${cycle.buyUrl}" target="_blank" rel="noopener"
+      id="panel-buy-btn" style="color:${cycle.color}; border-color:${cycle.color};">
+      Inscribirme en este ciclo
+    </a>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+// ── RIPPLE ────────────────────────────────────────────────────────────────────
+
+function spawnRipple(sx, sy, color) {
+  const el = document.createElement('div');
+  el.className = 'sg-ripple';
+  el.style.left = sx + 'px'; el.style.top = sy + 'px'; el.style.color = color;
+  document.body.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+}
+
+// ── FEEDBACK ──────────────────────────────────────────────────────────────────
+
+function initAudio() {
+  if (audioCtx) return;
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    audioCtx.resume();
+    if (soundMuted) return;
+    const t0 = 0.06;
+    [
+      { f:  49.0, v: 0.025, det: 0   },  // G1 — sub-bass (reducido para móvil)
+      { f:  98.0, v: 0.040, det: 0   },  // G2 — bajo (reducido para móvil)
+      { f: 130.8, v: 0.07, det: 1.2  },  // C3
+      { f: 261.6, v: 0.09, det: 1.8  },  // C4
+      { f: 392.0, v: 0.07, det: 1.8  },  // G4 — quinta
+      { f: 587.3, v: 0.09, det: 1.8  },  // D5 — 9ª
+      { f: 880.0, v: 0.04, det: 1.8  },  // A5 — 6ª
+    ].forEach(({ f, v, det }) => {
+      const pairs = det === 0 ? [0] : [-det, det];
+      pairs.forEach((d, i) => {
+        const osc = audioCtx.createOscillator();
+        const g   = audioCtx.createGain();
+        osc.connect(g); g.connect(audioCtx.destination);
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        osc.detune.value = d;
+        const vol = (i === 0 || det === 0) ? v : v * 0.38;
+        g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(vol, t0 + 0.65);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 9.5);
+        osc.start(t0); osc.stop(t0 + 9.6);
+      });
+    });
+  } catch(e) {}
+}
+
+function playGridArpeggio() {
+  if (!audioCtx || soundMuted) return;
+  try {
+    const now  = audioCtx.currentTime;
+    // Pool de notas del acorde — se tocan en orden random con timing random
+    const pool = [523.3, 784.0, 587.3, 1046.5, 392.0, 880.0, 659.3, 261.6, 1174.7];
+    // Barajar Fisher-Yates para que siempre suenen todas pero en orden distinto
+    const seq  = [...pool];
+    for (let i = seq.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [seq[i], seq[j]] = [seq[j], seq[i]];
+    }
+    let cursor = now + 0.42;
+    seq.forEach(f => {
+      cursor += 0.06 + Math.random() * 0.28; // 60-340ms entre hits
+      const t     = cursor;
+      const vol   = 0.028 + Math.random() * 0.022;
+      const decay = 1.1   + Math.random() * 1.3;  // 1.1-2.4s cola
+      const osc   = audioCtx.createOscillator();
+      const g     = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.011); // ataque muy rápido = metal
+      g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+      osc.start(t); osc.stop(t + decay + 0.05);
+    });
+  } catch(e) {}
+}
+
+function playTick(type) {
+  if (soundMuted || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    const now  = audioCtx.currentTime;
+    const freq = type === 'light' ? 900 : type === 'medium' ? 520 : type === 'success' ? 780 : 650;
+    const dur  = type === 'light' ? 0.055 : type === 'medium' ? 0.075 : 0.065;
+    const vol  = type === 'soft' ? 0.020 : 0.036;
+    const atk  = 0.007;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(vol, now + atk);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.start(now); osc.stop(now + dur);
+  } catch(e) {}
+}
+
+function triggerFeedback(type) {
+  // Mobile vibration
+  if ('vibrate' in navigator) {
+    const patterns = { light:[10], medium:[25], heavy:[50], soft:[8], success:[15,80,15] };
+    try { navigator.vibrate(patterns[type] || [10]); } catch(e) {}
+  }
+  // Desktop audio
+  const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+  if (!isMobile) playTick(type);
+}
+
+// ── VISUALIZER ────────────────────────────────────────────────────────────────
+
+function startVisualizer() {
+  if (selectedNode) clearSelection();
+  visualizerActive = true;
+  document.body.classList.add('viz-active');
+  document.getElementById('bg-layer').style.opacity = '0.18';
+
+  const fitScale = Math.min(window.innerWidth, window.innerHeight) * 0.82 / 1080;
+  animateTo(0, 0, Math.max(0.45, fitScale), 1400);
+
+  if (!document.getElementById('viz-pulse-layer')) {
+    const layer = document.createElement('div');
+    layer.id = 'viz-pulse-layer';
+    document.body.appendChild(layer);
+  }
+
+  scheduleVizPulse();
+  startVizVoices();
+  setTimeout(() => document.addEventListener('click', exitVizOnClick, true), 900);
+  triggerFeedback('soft');
+}
+
+function stopVisualizer() {
+  visualizerActive = false;
+  clearTimeout(visualizerTimer);
+  visualizerChimeTimers.forEach(clearTimeout);
+  visualizerChimeTimers = [];
+  document.removeEventListener('click', exitVizOnClick, true);
+  document.body.classList.remove('viz-active');
+  document.getElementById('bg-layer').style.opacity = '0.72';
+  document.getElementById('viz-pulse-layer')?.remove();
+  triggerFeedback('soft');
+}
+
+function startVizVoices() {
+  VIZ_VOICES.forEach(v => { v.last = -1; scheduleVizVoice(v); });
+  const firstVoice = VIZ_VOICES[Math.floor(Math.random() * VIZ_VOICES.length)];
+  setTimeout(() => playVizVoice(firstVoice), 420);
+}
+
+function scheduleVizVoice(voice) {
+  if (!visualizerActive) return;
+  const delay = voice.min + Math.random() * (voice.max - voice.min);
+  const timer = setTimeout(() => {
+    playVizVoice(voice);
+    scheduleVizVoice(voice);
+  }, delay);
+  visualizerChimeTimers.push(timer);
+}
+
+function spawnMicroPulse() {
+  const layer = document.getElementById('viz-pulse-layer');
+  if (!layer) return;
+  const litCycles = CYCLES.filter(c => clusterLit.has(c.key));
+  if (!litCycles.length) return;
+  const cycle = litCycles[Math.floor(Math.random() * litCycles.length)];
+  const group = clusterGroupMap[cycle.key];
+  if (!group) return;
+  const nodes = getSortedNodes(group);
+  if (!nodes.length) return;
+  const ng = nodes[Math.floor(Math.random() * nodes.length)];
+  const target = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+  if (!target) return;
+  const svgCx = parseFloat(target.getAttribute('cx'));
+  const svgCy = parseFloat(target.getAttribute('cy'));
+  const sx = window.innerWidth  / 2 + tx + (svgCx - 540)    * scale;
+  const sy = window.innerHeight / 2 + ty + (svgCy - 540.15) * scale;
+  const r  = Math.max(11.81 * scale * 5, 32);
+  const el = document.createElement('div');
+  el.className = 'viz-dot micro';
+  el.style.cssText = `left:${sx}px;top:${sy}px;width:${r*2}px;height:${r*2}px;margin-left:${-r}px;margin-top:${-r}px;background:${cycle.color};`;
+  layer.appendChild(el);
+  el.addEventListener('animationend', () => el.remove());
+
+  const cr   = Math.max(11.81 * scale * 1.4, 8);
+  const core = document.createElement('div');
+  core.className = 'viz-dot micro-core';
+  core.style.cssText = `left:${sx}px;top:${sy}px;width:${cr*2}px;height:${cr*2}px;margin-left:${-cr}px;margin-top:${-cr}px;background:${cycle.color};`;
+  layer.appendChild(core);
+  core.addEventListener('animationend', () => core.remove());
+}
+
+function playVizVoice(voice) {
+  if (!audioCtx || soundMuted || !visualizerActive) return;
+  spawnMicroPulse();
+  try {
+    let idx;
+    do { idx = Math.floor(Math.random() * voice.pool.length); }
+    while (idx === voice.last && voice.pool.length > 1);
+    voice.last = idx;
+    const f = voice.pool[idx];
+    const now = audioCtx.currentTime;
+    const vol = 0.007 + Math.random() * 0.005;
+    const decay = 3.5 + Math.random() * 4.5;
+    [-1.4, 0, 1.4].forEach((det, i) => {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = f;
+      osc.detune.value = det;
+      const v2 = i === 1 ? vol : vol * 0.28;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(v2, now + 0.018);
+      g.gain.exponentialRampToValueAtTime(0.001, now + decay);
+      osc.start(now); osc.stop(now + decay + 0.1);
+    });
+  } catch(e) {}
+}
+
+function playVizPing(cycle, isHub) {
+  if (!audioCtx || soundMuted || !visualizerActive) return;
+  try {
+    const notes = VIZ_PING_NOTES[cycle.key] || [523.3, 659.3];
+    const f     = isHub ? Math.min(...notes) : notes[Math.floor(Math.random() * notes.length)];
+    const freq  = isHub ? f / 2 : f;          // hub: nota más grave del pool, una octava abajo
+    const vol   = isHub ? 0.024 : 0.016;
+    const decay = isHub ? 6.5 + Math.random() * 3 : 4.0 + Math.random() * 2.5;
+    const now   = audioCtx.currentTime;
+    [-0.8, 0, 0.8].forEach((det, i) => {
+      const osc = audioCtx.createOscillator();
+      const g   = audioCtx.createGain();
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      osc.detune.value = det;
+      const v = i === 1 ? vol : vol * 0.22;
+      g.gain.setValueAtTime(0, now);
+      g.gain.linearRampToValueAtTime(v, now + 0.009);
+      g.gain.exponentialRampToValueAtTime(0.001, now + decay);
+      osc.start(now); osc.stop(now + decay + 0.05);
+    });
+  } catch(e) {}
+}
+
+function exitVizOnClick(e) {
+  e.stopImmediatePropagation();
+  stopVisualizer();
+  document.getElementById('visualizerBtn').classList.remove('active');
+}
+
+function scheduleVizPulse() {
+  if (!visualizerActive) return;
+  const delay = 1400 + Math.random() * 2800;
+  visualizerTimer = setTimeout(() => {
+    spawnVizPulse();
+    scheduleVizPulse();
+  }, delay);
+}
+
+function spawnVizPulse() {
+  const layer = document.getElementById('viz-pulse-layer');
+  if (!layer) return;
+
+  const litCycles = CYCLES.filter(c => clusterLit.has(c.key));
+  if (!litCycles.length) return;
+  const cycle = litCycles[Math.floor(Math.random() * litCycles.length)];
+  const group = clusterGroupMap[cycle.key];
+  if (!group) return;
+
+  const useHub = Math.random() < 0.4;
+  let svgCx, svgCy, baseR;
+
+  if (useHub) {
+    const hub = [...group.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
+    if (!hub) return;
+    svgCx = parseFloat(hub.getAttribute('cx'));
+    svgCy = parseFloat(hub.getAttribute('cy'));
+    baseR = 30.93 * scale;
+  } else {
+    const nodes = getSortedNodes(group);
+    if (!nodes.length) return;
+    const ng = nodes[Math.floor(Math.random() * nodes.length)];
+    const target = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+    if (!target) return;
+    svgCx = parseFloat(target.getAttribute('cx'));
+    svgCy = parseFloat(target.getAttribute('cy'));
+    baseR = 11.81 * scale;
+  }
+
+  const sx = window.innerWidth  / 2 + tx + (svgCx - 540)    * scale;
+  const sy = window.innerHeight / 2 + ty + (svgCy - 540.15) * scale;
+
+  playVizPing(cycle, useHub);
+
+  // Outer soft halo (very large, very blurred)
+  const outerR = Math.max(baseR * 9, 52);
+  const outer  = document.createElement('div');
+  outer.className = 'viz-dot glow outer';
+  outer.style.cssText = `left:${sx}px;top:${sy}px;width:${outerR*2}px;height:${outerR*2}px;margin-left:${-outerR}px;margin-top:${-outerR}px;background:${cycle.color};`;
+  layer.appendChild(outer);
+  outer.addEventListener('animationend', () => outer.remove());
+
+  // Inner tight glow
+  const glowR = Math.max(baseR * 4, 28);
+  const glow  = document.createElement('div');
+  glow.className = 'viz-dot glow';
+  glow.style.cssText = `left:${sx}px;top:${sy}px;width:${glowR*2}px;height:${glowR*2}px;margin-left:${-glowR}px;margin-top:${-glowR}px;background:${cycle.color};`;
+  layer.appendChild(glow);
+  glow.addEventListener('animationend', () => glow.remove());
+
+  // Solid bright core
+  const coreR = Math.max(baseR * 1.2, 6);
+  const core  = document.createElement('div');
+  core.className = 'viz-dot core';
+  core.style.cssText = `left:${sx}px;top:${sy}px;width:${coreR*2}px;height:${coreR*2}px;margin-left:${-coreR}px;margin-top:${-coreR}px;background:${cycle.color};`;
+  layer.appendChild(core);
+  core.addEventListener('animationend', () => core.remove());
+}
+
+// ── CONTROLS ──────────────────────────────────────────────────────────────────
+
+function setupControls() {
+  document.getElementById('zoomIn').addEventListener('click', () => {
+    scale = Math.min(10, scale * 1.25); applyTransform(); triggerFeedback('light');
+  });
+  document.getElementById('zoomOut').addEventListener('click', () => {
+    scale = Math.max(0.12, scale * 0.8); applyTransform(); triggerFeedback('light');
+  });
+  document.getElementById('zoomReset').addEventListener('click', () => {
+    animateTo(0, 0, 0.72); triggerFeedback('soft');
+  });
+
+  const vizBtn = document.getElementById('visualizerBtn');
+  vizBtn.addEventListener('click', () => {
+    if (visualizerActive) { stopVisualizer(); vizBtn.classList.remove('active'); }
+    else                  { startVisualizer(); vizBtn.classList.add('active'); }
+  });
+
+  const muteBtn = document.getElementById('muteBtn');
+  muteBtn.addEventListener('click', () => {
+    initAudio();
+    soundMuted = !soundMuted;
+    muteBtn.classList.toggle('muted', soundMuted);
+    muteBtn.title = soundMuted ? 'Sin sonido' : 'Sonido';
+    if (!soundMuted) triggerFeedback('soft');
+  });
+
+  const fsBtn  = document.getElementById('fullscreenBtn');
+  const fsIcon = document.getElementById('fs-icon').querySelector('path');
+  const EXPAND   = 'M1 5V1h4M9 1h4v4M13 9v4H9M5 13H1V9';
+  const COLLAPSE = 'M5 1v4H1M13 5h-4V1M9 13v-4h4M1 9h4v4';
+  fsBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+    else document.exitFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const inFs = !!document.fullscreenElement;
+    fsBtn.classList.toggle('active', inFs);
+    fsIcon.setAttribute('d', inFs ? COLLAPSE : EXPAND);
+    fsBtn.title = inFs ? 'Salir de pantalla completa' : 'Pantalla completa';
+  });
+}
+
+// ── PAN / ZOOM ────────────────────────────────────────────────────────────────
+
+const canvas   = document.getElementById('canvas');
+const viewport = document.getElementById('viewport');
+let scale = 0.72, tx = 0, ty = 0;
+let dragging = false, startX, startY;
+let velX = 0, velY = 0, lastMX = 0, lastMY = 0;
+let momentumRaf = null;
+
+function clampPan() {
+  const maxTx = 540 * scale + window.innerWidth  * 0.38;
+  const maxTy = 540 * scale + window.innerHeight * 0.38;
+  tx = Math.max(-maxTx, Math.min(maxTx, tx));
+  ty = Math.max(-maxTy, Math.min(maxTy, ty));
+}
+
+function applyTransform() {
+  clampPan();
+  canvas.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+  // Parallax background
+  const bgEl = document.getElementById('bg-layer');
+  if (bgEl) bgEl.style.transform = `translate(${-tx * 0.06}px,${-ty * 0.06}px)`;
+  updatePortrait();
+}
+
+function updatePortrait() {
+  const p = document.getElementById('center-portrait');
+  if (!p || !centerHubData) return;
+  const { cx, cy, r } = centerHubData;
+  const sr = r * scale;
+  const sx = window.innerWidth  / 2 + tx + (cx - 540)    * scale;
+  const sy = window.innerHeight / 2 + ty + (cy - 540.15) * scale;
+  p.style.left = (sx - sr) + 'px'; p.style.top    = (sy - sr) + 'px';
+  p.style.width = (sr * 2) + 'px'; p.style.height = (sr * 2) + 'px';
+}
+
+function animateTo(targetTx, targetTy, targetScale, duration) {
+  duration = duration || 650;
+  const startTx = tx, startTy = ty, startScale = scale;
+  const t0 = performance.now();
+  if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
+  function frame(now) {
+    const prog = Math.min((now - t0) / duration, 1);
+    const ease = 1 - Math.pow(1 - prog, 3);
+    tx = startTx + (targetTx - startTx) * ease;
+    ty = startTy + (targetTy - startTy) * ease;
+    scale = startScale + (targetScale - startScale) * ease;
+    applyTransform();
+    if (prog < 1) momentumRaf = requestAnimationFrame(frame);
+    else momentumRaf = null;
+  }
+  momentumRaf = requestAnimationFrame(frame);
+}
+
+// Mouse drag with inertia
+const fogActive = () => !document.getElementById('fog').classList.contains('cleared');
+
 canvas.addEventListener('mousedown', e => {
+  if (fogActive()) return;
   dragging = true;
   startX = e.clientX - tx; startY = e.clientY - ty;
+  lastMX = e.clientX; lastMY = e.clientY; velX = 0; velY = 0;
+  if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
   document.body.classList.add('dragging');
+  initAudio();
 });
 window.addEventListener('mousemove', e => {
   if (!dragging) return;
+  velX = e.clientX - lastMX; velY = e.clientY - lastMY;
+  lastMX = e.clientX; lastMY = e.clientY;
   tx = e.clientX - startX; ty = e.clientY - startY;
   applyTransform();
 });
 window.addEventListener('mouseup', () => {
+  if (!dragging) return;
   dragging = false; document.body.classList.remove('dragging');
+  (function glide() {
+    velX *= 0.88; velY *= 0.88;
+    if (Math.abs(velX) < 0.3 && Math.abs(velY) < 0.3) return;
+    tx += velX; ty += velY; applyTransform();
+    momentumRaf = requestAnimationFrame(glide);
+  })();
 });
 
+// Wheel: pinch/mouse-wheel → zoom; trackpad → pan
 window.addEventListener('wheel', e => {
   e.preventDefault();
-  const vr = viewport.getBoundingClientRect();
-  const mx = e.clientX - vr.left - vr.width  / 2;
-  const my = e.clientY - vr.top  - vr.height / 2;
-  const f  = e.deltaY < 0 ? 1.1 : 0.91;
-  const ns = Math.max(0.12, Math.min(10, scale * f));
-  tx = mx - (mx - tx) * (ns / scale);
-  ty = my - (my - ty) * (ns / scale);
-  scale = ns; applyTransform();
+  if (fogActive()) return;
+  if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
+  const isMouseWheel = !e.ctrlKey && Math.abs(e.deltaY) >= 50 && Math.abs(e.deltaX) < 5;
+  const isPinch      = e.ctrlKey;
+  if (isMouseWheel || isPinch) {
+    const vr = viewport.getBoundingClientRect();
+    const mx = e.clientX - vr.left - vr.width  / 2;
+    const my = e.clientY - vr.top  - vr.height / 2;
+    const f  = e.deltaY < 0 ? 1.09 : 0.92;
+    const ns = Math.max(0.12, Math.min(10, scale * f));
+    tx = mx - (mx - tx) * (ns / scale);
+    ty = my - (my - ty) * (ns / scale);
+    scale = ns;
+  } else {
+    tx -= e.deltaX; ty -= e.deltaY;
+  }
+  applyTransform();
 }, { passive: false });
 
+// Touch
 let touchDist = null;
 window.addEventListener('touchstart', e => {
+  if (fogActive()) return;
   if (e.touches.length === 1) {
     dragging = true;
     startX = e.touches[0].clientX - tx; startY = e.touches[0].clientY - ty;
+    if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
   } else if (e.touches.length === 2) {
     dragging = false;
     touchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
@@ -595,9 +1761,117 @@ window.addEventListener('touchmove', e => {
 }, { passive: false });
 window.addEventListener('touchend', () => { dragging = false; touchDist = null; });
 
-document.getElementById('zoomIn').addEventListener('click',    () => { scale = Math.min(10, scale * 1.25); applyTransform(); });
-document.getElementById('zoomOut').addEventListener('click',   () => { scale = Math.max(0.12, scale * 0.8); applyTransform(); });
-document.getElementById('zoomReset').addEventListener('click', () => { scale = 0.72; tx = 0; ty = 0; applyTransform(); });
+window.addEventListener('resize', applyTransform);
+
+document.addEventListener('visibilitychange', () => {
+  if (!visualizerActive) return;
+  if (document.hidden) {
+    clearTimeout(visualizerTimer);
+    visualizerChimeTimers.forEach(clearTimeout);
+    visualizerChimeTimers = [];
+  } else {
+    scheduleVizPulse();
+    startVizVoices();
+  }
+});
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    if (visualizerActive) { stopVisualizer(); document.getElementById('visualizerBtn').classList.remove('active'); }
+    else clearSelection();
+    return;
+  }
+  if (e.target !== document.body && e.target !== document.documentElement) return;
+  const step = e.shiftKey ? 120 : 40;
+  let moved = true;
+  switch (e.key) {
+    case 'r': case 'R':   animateTo(0, 0, 0.72); break;
+    case '+': case '=':   scale = Math.min(10, scale * 1.25); applyTransform(); break;
+    case '-': case '_':   scale = Math.max(0.12, scale * 0.8); applyTransform(); break;
+    case 'ArrowLeft':     tx += step; applyTransform(); break;
+    case 'ArrowRight':    tx -= step; applyTransform(); break;
+    case 'ArrowUp':       ty += step; applyTransform(); break;
+    case 'ArrowDown':     ty -= step; applyTransform(); break;
+    default: moved = false;
+  }
+  if (moved && ['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key)) {
+    e.preventDefault();
+    if (momentumRaf) { cancelAnimationFrame(momentumRaf); momentumRaf = null; }
+  }
+});
+
+// ── Magnetic cursor ────────────────────────────────────────────────────────
+(function() {
+  const dot = document.getElementById('cursor-dot');
+  if (!dot || window.matchMedia('(pointer: coarse)').matches) return;
+
+  // Cache of SVG-space node coords (computed once after init, reused every frame)
+  let nodeCache = [];
+  function buildNodeCache() {
+    nodeCache = [];
+    if (typeof CYCLES === 'undefined' || typeof clusterGroupMap === 'undefined') return;
+    for (const cycle of CYCLES) {
+      const group = clusterGroupMap[cycle.key];
+      if (!group) continue;
+      for (const ng of getSortedNodes(group)) {
+        const c = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
+        if (c) nodeCache.push({ svgCx: +c.getAttribute('cx'), svgCy: +c.getAttribute('cy'), svgR: 11.81 });
+      }
+      const hub = [...group.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
+      if (hub) nodeCache.push({ svgCx: +hub.getAttribute('cx'), svgCy: +hub.getAttribute('cy'), svgR: 30.93 });
+    }
+  }
+
+  function svgToScreen(cx, cy) {
+    return {
+      x: window.innerWidth  / 2 + tx + (cx - 540)    * scale,
+      y: window.innerHeight / 2 + ty + (cy - 540.15) * scale,
+    };
+  }
+
+  const SNAP_DIST = 88; // px — radio de atracción
+  let mouseX = 0, mouseY = 0, onBtn = false;
+  let curX = 0, curY = 0, curW = 10;
+  let rafId = null;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    dot.classList.add('active');
+    onBtn = !!(e.target.closest('button, [role=button], .legend-item') && !e.target.closest('[data-cycle]'));
+    dot.classList.toggle('btn-hover', onBtn);
+    if (!rafId) { curX = mouseX; curY = mouseY; rafId = requestAnimationFrame(loop); }
+  });
+  document.addEventListener('mouseleave', () => dot.classList.remove('active'));
+
+  function loop() {
+    // Lazy-build cache on first frame where graph is ready
+    if (!nodeCache.length && typeof clusterGroupMap !== 'undefined' && Object.keys(clusterGroupMap).length) buildNodeCache();
+
+    // Find nearest node in screen space
+    let snapX = mouseX, snapY = mouseY, snapW = onBtn ? 5 : 10;
+    if (!fogActive() && !visualizerActive && nodeCache.length) {
+      let minDist = Infinity, nx = 0, ny = 0, nr = 11.81;
+      for (const n of nodeCache) {
+        const s = svgToScreen(n.svgCx, n.svgCy);
+        const d = Math.hypot(mouseX - s.x, mouseY - s.y);
+        if (d < minDist) { minDist = d; nx = s.x; ny = s.y; nr = n.svgR; }
+      }
+      if (minDist < SNAP_DIST) { snapX = nx; snapY = ny; snapW = Math.max(nr * scale * 2.4, 16); }
+    }
+
+    // Lerp toward target
+    curX += (snapX - curX) * 0.22;
+    curY += (snapY - curY) * 0.22;
+    curW += (snapW - curW) * 0.18;
+
+    dot.style.left   = curX + 'px';
+    dot.style.top    = curY + 'px';
+    dot.style.width  = curW + 'px';
+    dot.style.height = curW + 'px';
+
+    rafId = requestAnimationFrame(loop);
+  }
+})();
 
 applyTransform();
 init();

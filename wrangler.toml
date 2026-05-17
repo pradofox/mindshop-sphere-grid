@@ -4,7 +4,7 @@ compatibility_date = "2025-01-01"
 account_id = "79b48e78b9db791957b966c527f8039a"
 
 routes = [
-  { pattern = "mindshop.sopadeletras.art", custom_domain = true }
+  { pattern = "mindshop.sopadeletras.art", custom_domain = true, zone_id = "6066e207043251bc802bed5f461fc0f3" }
 ]
 
 [assets]
