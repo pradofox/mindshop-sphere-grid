@@ -3,7 +3,7 @@ import { structureTool } from 'sanity/structure'
 import { schemaTypes } from './schemaTypes'
 
 // TODO: reemplazar con el projectId real después de correr `sanity init`
-const PROJECT_ID = 'REEMPLAZAR_CON_PROJECT_ID'
+const PROJECT_ID = 'wo3dfzz8'
 const DATASET    = 'production'
 
 export default defineConfig({
