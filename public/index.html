@@ -169,6 +169,7 @@
     #center-portrait {
       position: fixed; border-radius: 50%; overflow: hidden;
       z-index: 4; pointer-events: none;
+      width: 0; height: 0;
       transition: opacity 1.4s ease-out;
     }
     #center-portrait img {
@@ -1898,10 +1899,10 @@ window.addEventListener('keydown', e => {
       if (!group) continue;
       for (const ng of getSortedNodes(group)) {
         const c = [...ng.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 11.81) < 0.5);
-        if (c) nodeCache.push({ svgCx: +c.getAttribute('cx'), svgCy: +c.getAttribute('cy'), svgR: 11.81 });
+        if (c) nodeCache.push({ el: c, svgCx: +c.getAttribute('cx'), svgCy: +c.getAttribute('cy'), svgR: 11.81 });
       }
       const hub = [...group.querySelectorAll('circle')].find(c => Math.abs(parseFloat(c.getAttribute('r')) - 30.93) < 1);
-      if (hub) nodeCache.push({ svgCx: +hub.getAttribute('cx'), svgCy: +hub.getAttribute('cy'), svgR: 30.93 });
+      if (hub) nodeCache.push({ el: hub, svgCx: +hub.getAttribute('cx'), svgCy: +hub.getAttribute('cy'), svgR: 30.93 });
     }
   }
 
@@ -1912,7 +1913,7 @@ window.addEventListener('keydown', e => {
     };
   }
 
-  const SNAP_DIST = 88; // px — radio de atracción
+  const SNAP_DIST = 48; // px — radio de atracción
   let mouseX = 0, mouseY = 0, onBtn = false;
   let curX = 0, curY = 0, curW = 10;
   let rafId = null;
@@ -1933,13 +1934,19 @@ window.addEventListener('keydown', e => {
     // Find nearest node in screen space
     let snapX = mouseX, snapY = mouseY, snapW = onBtn ? 5 : 10;
     if (!fogActive() && !visualizerActive && nodeCache.length) {
-      let minDist = Infinity, nx = 0, ny = 0, nr = 11.81;
+      let minDist = Infinity, nearest = null;
       for (const n of nodeCache) {
         const s = svgToScreen(n.svgCx, n.svgCy);
         const d = Math.hypot(mouseX - s.x, mouseY - s.y);
-        if (d < minDist) { minDist = d; nx = s.x; ny = s.y; nr = n.svgR; }
+        if (d < minDist) { minDist = d; nearest = n; }
       }
-      if (minDist < SNAP_DIST) { snapX = nx; snapY = ny; snapW = Math.max(nr * scale * 2.4, 16); }
+      if (nearest && minDist < SNAP_DIST) {
+        // Posición exacta vía rect del nodo (evita desfases del cálculo SVG→pantalla)
+        const r = nearest.el.getBoundingClientRect();
+        snapX = r.left + r.width / 2;
+        snapY = r.top + r.height / 2;
+        snapW = Math.max(nearest.svgR * scale * 2.4, 16);
+      }
     }
 
     // Lerp toward target
